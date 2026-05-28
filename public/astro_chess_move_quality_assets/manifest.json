@@ -1,0 +1,69 @@
+{
+  "name": "Astro Chess Move Quality Assets",
+  "format": "SVG",
+  "size": "128x128",
+  "usage": "Board overlays / move classification badges",
+  "classes": [
+    {
+      "id": "brilliant",
+      "label": "Brilliant",
+      "symbol": "!!",
+      "file": "brilliant.svg"
+    },
+    {
+      "id": "great",
+      "label": "Great",
+      "symbol": "!",
+      "file": "great.svg"
+    },
+    {
+      "id": "best",
+      "label": "Best",
+      "symbol": "★",
+      "file": "best.svg"
+    },
+    {
+      "id": "excellent",
+      "label": "Excellent",
+      "symbol": "!",
+      "file": "excellent.svg"
+    },
+    {
+      "id": "good",
+      "label": "Good",
+      "symbol": "✓",
+      "file": "good.svg"
+    },
+    {
+      "id": "book",
+      "label": "Book",
+      "symbol": "♜",
+      "file": "book.svg"
+    },
+    {
+      "id": "inaccuracy",
+      "label": "Inaccuracy",
+      "symbol": "?!",
+      "file": "inaccuracy.svg"
+    },
+    {
+      "id": "mistake",
+      "label": "Mistake",
+      "symbol": "?",
+      "file": "mistake.svg"
+    },
+    {
+      "id": "missed_chance",
+      "label": "Missed Chance",
+      "symbol": "×",
+      "file": "missed_chance.svg"
+    },
+    {
+      "id": "blunder",
+      "label": "Blunder",
+      "symbol": "??",
+      "file": "blunder.svg"
+    }
+  ],
+  "note": "Original cosmic purple Astro Chess style; inspired by common chess move classification concepts, not a copy of any platform assets."
+}

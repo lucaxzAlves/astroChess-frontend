@@ -1,0 +1,29 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="crackGlow" x="-20" y="-20" width="200" height="200" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="2.8" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.659 0 0 0 0 0.333 0 0 0 0 0.969 0 0 0 0.8 0"/>
+      <feBlend in2="SourceGraphic" mode="screen"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#crackGlow)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M80 80L54 48L37 42L23 25" stroke="#0b0714" stroke-width="8" opacity="0.74"/>
+    <path d="M80 80L102 45L124 34L139 14" stroke="#0b0714" stroke-width="7" opacity="0.72"/>
+    <path d="M80 80L126 88L147 101" stroke="#0b0714" stroke-width="7" opacity="0.72"/>
+    <path d="M80 80L97 119L112 143" stroke="#0b0714" stroke-width="8" opacity="0.72"/>
+    <path d="M80 80L50 113L28 133" stroke="#0b0714" stroke-width="7" opacity="0.72"/>
+    <path d="M80 80L31 82L12 91" stroke="#0b0714" stroke-width="7" opacity="0.72"/>
+
+    <path d="M80 80L54 48L37 42L23 25" stroke="#a855f7" stroke-width="3.2"/>
+    <path d="M80 80L102 45L124 34L139 14" stroke="#22d3ee" stroke-width="3"/>
+    <path d="M80 80L126 88L147 101" stroke="#a855f7" stroke-width="3"/>
+    <path d="M80 80L97 119L112 143" stroke="#22d3ee" stroke-width="3.2"/>
+    <path d="M80 80L50 113L28 133" stroke="#a855f7" stroke-width="3"/>
+    <path d="M80 80L31 82L12 91" stroke="#22d3ee" stroke-width="3"/>
+
+    <path d="M54 48L60 28M102 45L94 25M126 88L145 78M97 119L86 139M50 113L54 141M31 82L19 68" stroke="#f8fafc" stroke-width="1.7" opacity="0.82"/>
+    <path d="M80 80L71 66L87 58L92 74L80 80Z" fill="#f8fafc" opacity="0.8"/>
+    <path d="M80 80L66 86L73 98L91 92L80 80Z" fill="#22d3ee" opacity="0.24"/>
+  </g>
+</svg>

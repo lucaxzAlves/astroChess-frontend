@@ -1,0 +1,26 @@
+{
+  "name": "astroChess",
+  "short_name": "astroChess",
+  "description": "Chess training, analysis, and improvement platform.",
+  "icons": [
+    {
+      "src": "/favicon-32x32.png?v=2",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png?v=2",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/astrochess-favicon-512.png?v=2",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "theme_color": "#080712",
+  "background_color": "#080712",
+  "display": "standalone"
+}

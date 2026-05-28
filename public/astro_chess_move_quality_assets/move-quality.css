@@ -1,0 +1,139 @@
+/* Astro Chess move quality badge helpers */
+
+.move-quality-brilliant {
+  --mq-primary: #15f4ff;
+  --mq-secondary: #7c3aed;
+  --mq-accent: #ffffff;
+  background-image: url("/assets/move-quality/brilliant.svg");
+}
+
+.move-quality-badge[data-quality="brilliant"] {
+  background: radial-gradient(circle at 30% 20%, #15f4ff, #7c3aed 55%, #070712 100%);
+  border-color: color-mix(in srgb, #15f4ff 70%, white 10%);
+}
+
+.move-quality-great {
+  --mq-primary: #3b82f6;
+  --mq-secondary: #8b5cf6;
+  --mq-accent: #ffffff;
+  background-image: url("/assets/move-quality/great.svg");
+}
+
+.move-quality-badge[data-quality="great"] {
+  background: radial-gradient(circle at 30% 20%, #3b82f6, #8b5cf6 55%, #070712 100%);
+  border-color: color-mix(in srgb, #3b82f6 70%, white 10%);
+}
+
+.move-quality-best {
+  --mq-primary: #22c55e;
+  --mq-secondary: #7c3aed;
+  --mq-accent: #ecfdf5;
+  background-image: url("/assets/move-quality/best.svg");
+}
+
+.move-quality-badge[data-quality="best"] {
+  background: radial-gradient(circle at 30% 20%, #22c55e, #7c3aed 55%, #070712 100%);
+  border-color: color-mix(in srgb, #22c55e 70%, white 10%);
+}
+
+.move-quality-excellent {
+  --mq-primary: #38bdf8;
+  --mq-secondary: #9333ea;
+  --mq-accent: #ffffff;
+  background-image: url("/assets/move-quality/excellent.svg");
+}
+
+.move-quality-badge[data-quality="excellent"] {
+  background: radial-gradient(circle at 30% 20%, #38bdf8, #9333ea 55%, #070712 100%);
+  border-color: color-mix(in srgb, #38bdf8 70%, white 10%);
+}
+
+.move-quality-good {
+  --mq-primary: #10b981;
+  --mq-secondary: #4c1d95;
+  --mq-accent: #ecfdf5;
+  background-image: url("/assets/move-quality/good.svg");
+}
+
+.move-quality-badge[data-quality="good"] {
+  background: radial-gradient(circle at 30% 20%, #10b981, #4c1d95 55%, #070712 100%);
+  border-color: color-mix(in srgb, #10b981 70%, white 10%);
+}
+
+.move-quality-book {
+  --mq-primary: #a78bfa;
+  --mq-secondary: #312e81;
+  --mq-accent: #f5f3ff;
+  background-image: url("/assets/move-quality/book.svg");
+}
+
+.move-quality-badge[data-quality="book"] {
+  background: radial-gradient(circle at 30% 20%, #a78bfa, #312e81 55%, #070712 100%);
+  border-color: color-mix(in srgb, #a78bfa 70%, white 10%);
+}
+
+.move-quality-inaccuracy {
+  --mq-primary: #facc15;
+  --mq-secondary: #7c2d12;
+  --mq-accent: #fff7ed;
+  background-image: url("/assets/move-quality/inaccuracy.svg");
+}
+
+.move-quality-badge[data-quality="inaccuracy"] {
+  background: radial-gradient(circle at 30% 20%, #facc15, #7c2d12 55%, #070712 100%);
+  border-color: color-mix(in srgb, #facc15 70%, white 10%);
+}
+
+.move-quality-mistake {
+  --mq-primary: #fb923c;
+  --mq-secondary: #7c2d12;
+  --mq-accent: #fff7ed;
+  background-image: url("/assets/move-quality/mistake.svg");
+}
+
+.move-quality-badge[data-quality="mistake"] {
+  background: radial-gradient(circle at 30% 20%, #fb923c, #7c2d12 55%, #070712 100%);
+  border-color: color-mix(in srgb, #fb923c 70%, white 10%);
+}
+
+.move-quality-missed-chance {
+  --mq-primary: #fb7185;
+  --mq-secondary: #581c87;
+  --mq-accent: #fff1f2;
+  background-image: url("/assets/move-quality/missed_chance.svg");
+}
+
+.move-quality-badge[data-quality="missed_chance"] {
+  background: radial-gradient(circle at 30% 20%, #fb7185, #581c87 55%, #070712 100%);
+  border-color: color-mix(in srgb, #fb7185 70%, white 10%);
+}
+
+.move-quality-blunder {
+  --mq-primary: #ef4444;
+  --mq-secondary: #450a0a;
+  --mq-accent: #fff1f2;
+  background-image: url("/assets/move-quality/blunder.svg");
+}
+
+.move-quality-badge[data-quality="blunder"] {
+  background: radial-gradient(circle at 30% 20%, #ef4444, #450a0a 55%, #070712 100%);
+  border-color: color-mix(in srgb, #ef4444 70%, white 10%);
+}
+
+.move-quality-icon {
+  width: 42px;
+  height: 42px;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.45));
+}
+
+.move-quality-board-marker {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 20;
+}

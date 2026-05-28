@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="750" height="380" viewBox="0 0 750 380">
+<rect width="100%" height="100%" fill="#0f0f14"/>
+<defs><filter id="labelGlow"><feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#a855f7" flood-opacity="0.35"/></filter></defs>
+<image href="brilliant.svg" x="22" y="8" width="106" height="106"/>
+<text x="75" y="146" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" fill="#f8fafc" filter="url(#labelGlow)">Brilliant</text>
+<text x="75" y="168" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#9ca3af">brilliant</text>
+<image href="great.svg" x="172" y="8" width="106" height="106"/>
+<text x="225" y="146" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" fill="#f8fafc" filter="url(#labelGlow)">Great</text>
+<text x="225" y="168" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#9ca3af">great</text>
+<image href="best.svg" x="322" y="8" width="106" height="106"/>
+<text x="375" y="146" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" fill="#f8fafc" filter="url(#labelGlow)">Best</text>
+<text x="375" y="168" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#9ca3af">best</text>
+<image href="excellent.svg" x="472" y="8" width="106" height="106"/>
+<text x="525" y="146" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" fill="#f8fafc" filter="url(#labelGlow)">Excellent</text>
+<text x="525" y="168" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#9ca3af">excellent</text>
+<image href="good.svg" x="622" y="8" width="106" height="106"/>
+<text x="675" y="146" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" fill="#f8fafc" filter="url(#labelGlow)">Good</text>
+<text x="675" y="168" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#9ca3af">good</text>
+<image href="book.svg" x="22" y="198" width="106" height="106"/>
+<text x="75" y="336" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" fill="#f8fafc" filter="url(#labelGlow)">Book</text>
+<text x="75" y="358" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#9ca3af">book</text>
+<image href="inaccuracy.svg" x="172" y="198" width="106" height="106"/>
+<text x="225" y="336" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" fill="#f8fafc" filter="url(#labelGlow)">Inaccuracy</text>
+<text x="225" y="358" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#9ca3af">inaccuracy</text>
+<image href="mistake.svg" x="322" y="198" width="106" height="106"/>
+<text x="375" y="336" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" fill="#f8fafc" filter="url(#labelGlow)">Mistake</text>
+<text x="375" y="358" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#9ca3af">mistake</text>
+<image href="missed_chance.svg" x="472" y="198" width="106" height="106"/>
+<text x="525" y="336" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" fill="#f8fafc" filter="url(#labelGlow)">Missed Chance</text>
+<text x="525" y="358" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#9ca3af">missed_chance</text>
+<image href="blunder.svg" x="622" y="198" width="106" height="106"/>
+<text x="675" y="336" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" fill="#f8fafc" filter="url(#labelGlow)">Blunder</text>
+<text x="675" y="358" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#9ca3af">blunder</text>
+</svg>

@@ -1,0 +1,288 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --astro-bg: #070711;
+  --astro-bg-soft: #0d0d18;
+  --astro-card: rgba(20, 20, 32, 0.78);
+  --astro-card-solid: #151522;
+  --astro-border: rgba(168, 85, 247, 0.22);
+  --astro-border-strong: rgba(168, 85, 247, 0.45);
+  --astro-purple: #a855f7;
+  --astro-violet: #7c3aed;
+  --astro-cyan: #22d3ee;
+  --astro-pink: #ec4899;
+  --astro-text: #f8fafc;
+  --astro-muted: #9ca3af;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--astro-bg);
+  color: var(--astro-text);
+}
+
+.astro-page-bg {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(168, 85, 247, 0.12), transparent 28%),
+    radial-gradient(circle at 88% 18%, rgba(34, 211, 238, 0.06), transparent 26%),
+    linear-gradient(180deg, #070711 0%, #090914 52%, #060610 100%);
+  overflow-x: hidden;
+}
+
+.astro-page-bg::before {
+  content: none;
+}
+
+.astro-page-bg::after {
+  content: none;
+}
+
+.astro-page-content {
+  position: relative;
+  z-index: 1;
+}
+
+.astro-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--astro-border);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(22, 22, 36, 0.92), rgba(12, 12, 22, 0.96));
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.astro-card::before {
+  content: none;
+}
+
+.astro-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.astro-card:hover {
+  border-color: var(--astro-border-strong);
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.055);
+}
+
+.astro-eyebrow {
+  color: var(--astro-cyan);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.astro-gradient-title {
+  background: linear-gradient(90deg, #ffffff, #c084fc 48%, #22d3ee);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.astro-button-primary {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, #7c3aed, #a855f7 54%, #22d3ee);
+  color: white;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+}
+
+.astro-button-primary:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.26);
+}
+
+.astro-button-secondary {
+  border: 1px solid rgba(168, 85, 247, 0.32);
+  background: rgba(15, 15, 26, 0.7);
+  color: #d8b4fe;
+}
+
+.astro-button-secondary:hover {
+  border-color: rgba(34, 211, 238, 0.42);
+  color: #cffafe;
+  background: rgba(34, 211, 238, 0.08);
+}
+
+.astro-orbit-ring,
+.astro-meteor-accent,
+.astro-glow-line {
+  pointer-events: none;
+}
+
+.astro-orbit-ring {
+  position: absolute;
+  width: 170px;
+  height: 170px;
+  border: 1px solid rgba(168, 85, 247, 0.18);
+  border-radius: 999px;
+  transform: rotate(-18deg) scaleY(0.54);
+}
+
+.astro-glow-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.65), rgba(34, 211, 238, 0.55), transparent);
+}
+
+.astro-page-content [class*="border-white/10"] {
+  border-color: rgba(168, 85, 247, 0.18) !important;
+}
+
+.astro-page-content [class*="bg-white/[0.04]"],
+.astro-page-content [class*="bg-white/[0.03]"],
+.astro-page-content [class*="bg-slate-950/35"],
+.astro-page-content [class*="bg-slate-950/40"],
+.astro-page-content [class*="bg-slate-950/45"],
+.astro-page-content [class*="bg-slate-950/50"] {
+  background:
+    linear-gradient(180deg, rgba(22, 22, 37, 0.82), rgba(10, 10, 20, 0.86)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.astro-page-content [class*="rounded-2xl"][class*="border"],
+.astro-page-content [class*="rounded-[28px]"][class*="border"] {
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.astro-page-content h1 {
+  letter-spacing: 0;
+}
+
+.astro-page-content h1.text-white,
+.astro-page-content h1[class*="text-white"] {
+  background: linear-gradient(90deg, #ffffff, #d8b4fe 46%, #67e8f9);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+}
+
+.astro-page-content select,
+.astro-page-content input,
+.astro-page-content textarea {
+  border-color: rgba(168, 85, 247, 0.22) !important;
+  background:
+    linear-gradient(180deg, rgba(7, 7, 17, 0.92), rgba(13, 13, 24, 0.94)) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.astro-page-content select:focus,
+.astro-page-content input:focus,
+.astro-page-content textarea:focus {
+  border-color: rgba(34, 211, 238, 0.52) !important;
+  box-shadow:
+    0 0 0 4px rgba(34, 211, 238, 0.08),
+    0 0 22px rgba(168, 85, 247, 0.16) !important;
+}
+
+.astro-page-content button[class*="bg-purple-500"],
+.astro-page-content a[class*="bg-purple-500"] {
+  background: linear-gradient(135deg, #7c3aed, #a855f7 58%, #22d3ee) !important;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+}
+
+.astro-page-content button[class*="bg-purple-500"]:hover,
+.astro-page-content a[class*="bg-purple-500"]:hover {
+  filter: brightness(1.08);
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.24);
+}
+
+.astro-page-content [class*="text-purple-300"] {
+  color: #c4b5fd !important;
+}
+
+.astro-page-content [class*="shadow-purple"] {
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.2) !important;
+}
+
+.games-list-scroll {
+  scrollbar-width: auto;
+  scrollbar-color: rgba(168, 85, 247, 0.78) rgba(15, 23, 42, 0.72);
+}
+
+.games-list-scroll::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+.games-list-scroll::-webkit-scrollbar-track {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.68), rgba(8, 8, 18, 0.9));
+  border-left: 1px solid rgba(168, 85, 247, 0.18);
+}
+
+.games-list-scroll::-webkit-scrollbar-thumb {
+  min-height: 56px;
+  border: 3px solid rgba(9, 9, 18, 0.95);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(216, 180, 254, 0.95), rgba(168, 85, 247, 0.78), rgba(34, 211, 238, 0.58));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+    0 0 16px rgba(168, 85, 247, 0.26);
+}
+
+.games-list-scroll::-webkit-scrollbar-thumb:hover {
+  background:
+    linear-gradient(180deg, rgba(245, 243, 255, 0.98), rgba(192, 132, 252, 0.9), rgba(103, 232, 249, 0.72));
+}
+
+.review-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  min-height: calc(100vh - 4rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+.review-board-column {
+  min-width: 0;
+}
+
+.review-aside {
+  min-width: 0;
+  width: 100%;
+}
+
+@media (min-width: 1100px) {
+  .review-layout {
+    grid-template-columns: minmax(0, 1fr) 420px;
+    align-items: start;
+  }
+
+  .review-aside {
+    min-width: 380px;
+    max-width: 420px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+  }
+}

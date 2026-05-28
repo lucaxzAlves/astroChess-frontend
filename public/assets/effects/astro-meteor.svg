@@ -1,0 +1,60 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="trailA" x1="6" y1="8" x2="88" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity="0"/>
+      <stop offset="0.25" stop-color="#22d3ee" stop-opacity="0.62"/>
+      <stop offset="0.62" stop-color="#a855f7" stop-opacity="0.82"/>
+      <stop offset="1" stop-color="#f8fafc" stop-opacity="0.92"/>
+    </linearGradient>
+    <linearGradient id="rockFace" x1="55" y1="48" x2="101" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4c1d95"/>
+      <stop offset="0.42" stop-color="#1f1b2e"/>
+      <stop offset="1" stop-color="#0b0714"/>
+    </linearGradient>
+    <linearGradient id="hotEdge" x1="45" y1="40" x2="111" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22d3ee"/>
+      <stop offset="0.48" stop-color="#a855f7"/>
+      <stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+    <filter id="outerGlow" x="-34" y="-34" width="196" height="196" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="4.8" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.659 0 0 0 0 0.333 0 0 0 0 0.969 0 0 0 0.85 0"/>
+      <feBlend in2="SourceGraphic" mode="screen"/>
+    </filter>
+    <filter id="cyanGlow" x="24" y="24" width="100" height="100" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="2.6" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.133 0 0 0 0 0.827 0 0 0 0 0.933 0 0 0 0.75 0"/>
+      <feBlend in2="SourceGraphic" mode="screen"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#outerGlow)">
+    <path d="M3 9C28 17 54 33 82 60C53 54 27 35 3 9Z" fill="url(#trailA)" opacity="0.68"/>
+    <path d="M14 31C39 35 63 47 87 67C59 69 34 55 14 31Z" fill="#22d3ee" opacity="0.26"/>
+    <path d="M28 3C47 22 65 42 88 70C65 58 47 36 28 3Z" fill="#7c3aed" opacity="0.36"/>
+    <path d="M48 17C61 32 72 45 91 73C75 62 63 47 48 17Z" fill="#f8fafc" opacity="0.22"/>
+
+    <path d="M55 51L72 38L94 43L112 62L116 84L104 105L78 116L54 108L39 88L42 65L55 51Z" fill="url(#hotEdge)" opacity="0.92"/>
+    <path d="M58 54L73 44L92 48L106 64L109 83L99 100L77 109L58 102L47 86L49 68L58 54Z" fill="url(#rockFace)"/>
+    <path d="M73 44L92 48L106 64L91 60L81 51L66 57L58 54L73 44Z" fill="#5b21b6" opacity="0.5"/>
+    <path d="M47 86L58 102L77 109L99 100L84 98L69 89L56 91L47 86Z" fill="#07030f" opacity="0.62"/>
+    <path d="M49 68L58 54L66 57L62 72L51 78L49 68Z" fill="#31224b" opacity="0.9"/>
+    <path d="M91 60L106 64L109 83L99 80L91 69L91 60Z" fill="#0b0714" opacity="0.68"/>
+
+    <g filter="url(#cyanGlow)">
+      <path d="M66 57L76 68L72 80L82 92" stroke="#22d3ee" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M82 51L84 66L97 75" stroke="#a855f7" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M58 86L71 84L77 100" stroke="#f8fafc" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+      <path d="M88 86L99 80" stroke="#22d3ee" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+    </g>
+
+    <path d="M55 51L72 38L94 43L112 62" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" opacity="0.68"/>
+    <path d="M42 65L39 88L54 108L78 116" stroke="#a855f7" stroke-width="2" stroke-linecap="round" opacity="0.72"/>
+
+    <circle cx="20" cy="20" r="2" fill="#f8fafc" opacity="0.82"/>
+    <circle cx="35" cy="13" r="1.6" fill="#22d3ee" opacity="0.82"/>
+    <circle cx="18" cy="50" r="1.8" fill="#a855f7" opacity="0.78"/>
+    <circle cx="47" cy="34" r="1.4" fill="#f8fafc" opacity="0.62"/>
+    <path d="M112 23L114.4 28.2L120 30L114.4 31.8L112 37L109.6 31.8L104 30L109.6 28.2L112 23Z" fill="#22d3ee" opacity="0.7"/>
+  </g>
+</svg>
