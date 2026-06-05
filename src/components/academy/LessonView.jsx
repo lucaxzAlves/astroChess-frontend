@@ -1,7 +1,7 @@
 import { useLanguage } from "../../contexts/LanguageContext.jsx";
 import AcademyConceptBoard from "./AcademyConceptBoard.jsx";
+import AcademyPracticeBoard from "./AcademyPracticeBoard.jsx";
 import ModelGameCard from "./ModelGameCard.jsx";
-import PuzzlePreviewCard from "./PuzzlePreviewCard.jsx";
 import ResourceCard from "./ResourceCard.jsx";
 
 function SectionTitle({ eyebrow, title, description }) {
@@ -140,11 +140,7 @@ export default function LessonView({
           title={t("academy.targetedPractice")}
           description={t("academy.targetedPracticeDescription")}
         />
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {(lesson.puzzles || []).map((puzzle) => (
-            <PuzzlePreviewCard key={puzzle.id} puzzle={puzzle} />
-          ))}
-        </div>
+        <AcademyPracticeBoard puzzles={lesson.puzzles || []} />
       </section>
     </div>
   );

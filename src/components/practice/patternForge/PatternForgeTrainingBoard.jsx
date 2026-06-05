@@ -12,7 +12,115 @@ import ForgeRightPanel from "./ForgeRightPanel.jsx";
 import "../../../styles/gameReview.css";
 
 function getId(value) {
+  if (typeof value === "string") return value;
   return value?._id || value?.id || "";
+}
+
+function buildCompletedPuzzleCountMap(todaySession) {
+  const counts = new Map();
+  const completedPuzzleIds = Array.isArray(todaySession?.completedPuzzleIds)
+    ? todaySession.completedPuzzleIds
+    : [];
+
+  completedPuzzleIds.forEach((puzzleId) => {
+    const id = getId(puzzleId);
+    if (!id) return;
+    counts.set(id, (counts.get(id) || 0) + 1);
+  });
+
+  return counts;
+}
+
+function getFirstPendingPuzzleIndex(sessionPuzzles = [], todaySession) {
+  const completedCounts = buildCompletedPuzzleCountMap(todaySession);
+  const seenCounts = new Map();
+
+  for (let index = 0; index < sessionPuzzles.length; index += 1) {
+    const puzzleId = getId(sessionPuzzles[index]);
+    if (!puzzleId) return index;
+
+    const occurrence = seenCounts.get(puzzleId) || 0;
+    seenCounts.set(puzzleId, occurrence + 1);
+
+    if (occurrence >= (completedCounts.get(puzzleId) || 0)) {
+      return index;
+    }
+  }
+
+  return Math.max(0, sessionPuzzles.length - 1);
+}
+
+function formatReasonConfidence(value) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue) || numericValue <= 0) return null;
+  return Math.round(numericValue <= 1 ? numericValue * 100 : numericValue);
+}
+
+function formatThemeReasonSource(sourceField = "", language = "pt-BR") {
+  const normalized = String(sourceField || "").toLowerCase();
+  const isPt = String(language || "").toLowerCase().startsWith("pt");
+
+  if (normalized.includes("skillmap")) return isPt ? "Mapa de habilidades" : "Skill map";
+  if (normalized.includes("recurringmistakes")) return isPt ? "Erros recorrentes" : "Recurring mistakes";
+  if (normalized.includes("openingrepertoire")) return isPt ? "Repertório de aberturas" : "Opening repertoire";
+  if (normalized.includes("recommendations") || normalized.includes("goals") || normalized.includes("decisionpatterns")) {
+    return isPt ? "Plano do coach" : "Coach plan";
+  }
+
+  return isPt ? "Perfil do jogador" : "Player profile";
+}
+
+function formatThemeReasonText(reason, language = "pt-BR") {
+  const rawReason = String(reason?.reason || "").trim();
+  const sourceLabel = formatThemeReasonSource(reason?.sourceField, language);
+  const themeLabel = getThemeTitle(reason?.theme, language);
+  const isPt = String(language || "").toLowerCase().startsWith("pt");
+  const lowerReason = rawReason.toLowerCase();
+
+  if (!rawReason) {
+    return isPt
+      ? `${themeLabel} foi escolhido a partir dos sinais do seu perfil.`
+      : `${themeLabel} was selected from signals in your profile.`;
+  }
+
+  if (lowerReason.includes("low tactical pattern score")) {
+    return isPt
+      ? "Seu mapa de habilidades indica que padrões táticos precisam de reforço."
+      : "Your skill map suggests tactical patterns need reinforcement.";
+  }
+
+  if (lowerReason.includes("low calculation score")) {
+    return isPt
+      ? "Seu perfil aponta cálculo como uma prioridade de treino."
+      : "Your profile marks calculation as a training priority.";
+  }
+
+  if (lowerReason.includes("endgame score")) {
+    return isPt
+      ? "Sua pontuação de finais sugere treino técnico adicional."
+      : "Your endgame score suggests additional technical training.";
+  }
+
+  if (lowerReason.includes("opening score")) {
+    return isPt
+      ? "Seu repertório de aberturas precisa de revisão guiada."
+      : "Your opening repertoire needs guided review.";
+  }
+
+  if (lowerReason.includes("time management score")) {
+    return isPt
+      ? "O perfil detectou dificuldade em decisões sob pressão de tempo."
+      : "Your profile detected difficulty making decisions under time pressure.";
+  }
+
+  if (lowerReason.includes("low resilience score")) {
+    return isPt
+      ? "O perfil indica que recursos defensivos sob pressão merecem atenção."
+      : "Your profile indicates defensive resources under pressure need attention.";
+  }
+
+  const compactReason = rawReason.length > 150 ? `${rawReason.slice(0, 147).trim()}...` : rawReason;
+  return isPt ? `${sourceLabel}: ${compactReason}` : `${sourceLabel}: ${compactReason}`;
 }
 
 function moveToUci(move) {
@@ -167,6 +275,10 @@ export default function PatternForgeTrainingBoard({
     },
     [puzzles, total]
   );
+  const firstPendingPuzzleIndex = useMemo(
+    () => getFirstPendingPuzzleIndex(sessionPuzzles, todaySession),
+    [sessionPuzzles, todaySession]
+  );
 
   const puzzle = sessionPuzzles[currentPuzzleIndex] || sessionPuzzles[0];
   const phase = getRoundPhase(currentRound.round, totalRounds, language);
@@ -252,6 +364,10 @@ export default function PatternForgeTrainingBoard({
     setLastMoveLabel("");
     setPuzzleStartedAt(Date.now());
   }, [puzzle?.sessionPuzzleId, puzzle?.fen]);
+
+  useEffect(() => {
+    setCurrentPuzzleIndex(firstPendingPuzzleIndex);
+  }, [firstPendingPuzzleIndex, todaySession?._id, todaySession?.id]);
 
   useEffect(() => {
     setDailyGoalPromptDismissed(false);
@@ -945,15 +1061,21 @@ export default function PatternForgeTrainingBoard({
         <section className="rounded-[28px] border border-cyan-300/20 bg-cyan-300/[0.06] p-5">
           <h2 className="text-xl font-semibold text-white">{t("patternForge.whyThemesTitle")}</h2>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {themeReasons.map((reason) => (
-              <div key={`${reason.theme}-${reason.sourceField}`} className="rounded-2xl border border-white/10 bg-slate-950/35 p-4">
-                <p className="font-semibold text-cyan-100">{getThemeTitle(reason.theme, language)}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{reason.reason}</p>
-                <p className="mt-3 text-xs text-cyan-200">
-                  {reason.sourceField} · {Math.round((reason.confidence || 0) * 100)}%
-                </p>
-              </div>
-            ))}
+            {themeReasons.map((reason) => {
+              const confidence = formatReasonConfidence(reason.confidence);
+              return (
+                <div key={`${reason.theme}-${reason.sourceField}`} className="rounded-2xl border border-white/10 bg-slate-950/35 p-4">
+                  <p className="font-semibold text-cyan-100">{getThemeTitle(reason.theme, language)}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-300">
+                    {formatThemeReasonText(reason, language)}
+                  </p>
+                  <p className="mt-3 text-xs text-cyan-200">
+                    {formatThemeReasonSource(reason.sourceField, language)}
+                    {confidence ? ` · ${confidence}%` : ""}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </section>
       ) : null}

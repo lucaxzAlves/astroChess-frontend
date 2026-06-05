@@ -100,11 +100,18 @@ function normalizeApiLesson(lesson, module, path) {
         }
       : null,
     puzzles: asArray(targetedPractice.customPuzzles).map((puzzle, index) => ({
+      ...puzzle,
       id: puzzle.id || `${id}-puzzle-${index + 1}`,
-      fen: puzzle.fen,
-      theme: asArray(puzzle.themes)[0] || "",
+      title: puzzle.title || puzzle.name || `Puzzle ${index + 1}`,
+      fen: puzzle.playableFen || puzzle.fen,
+      playableFen: puzzle.playableFen,
+      prompt: puzzle.prompt || puzzle.question || "",
+      themes: asArray(puzzle.themes).length ? asArray(puzzle.themes) : asArray(puzzle.tags),
+      theme: asArray(puzzle.themes)[0] || puzzle.theme || "",
       difficulty: formatLabel(puzzle.difficulty || "easy"),
-      solution: asArray(puzzle.moves || puzzle.solution),
+      rating: puzzle.rating || puzzle.elo || null,
+      solutionMoves: asArray(puzzle.solutionMoves),
+      solution: asArray(puzzle.moves || puzzle.solution || puzzle.solutionMoves),
       explanation: puzzle.explanation || "",
     })),
   };

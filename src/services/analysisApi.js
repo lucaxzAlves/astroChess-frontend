@@ -50,7 +50,7 @@ function buildRequestBody({ game, includeAiReview = true }) {
         metadata: {
           white: game?.white?.username || game?.whitePlayer || "White",
           black: game?.black?.username || game?.blackPlayer || "Black",
-          result: game?.result || extractPgnResult(pgn) || "*",
+          result: extractPgnResult(pgn) || game?.rawResult || game?.result || "*",
           site: game?.url || "Chess.com",
           date: formatGameDate(game?.date),
         },

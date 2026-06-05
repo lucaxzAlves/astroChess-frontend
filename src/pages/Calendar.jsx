@@ -9,6 +9,8 @@ const fallbackTournamentFilters = {
   recommendations: ["All", "Best", "Highly recommended", "Good", "Low priority"],
 };
 
+const MAX_TOURNAMENTS_PER_DAY = 3;
+
 const trainingDays = [
   { day: 1, status: "Concluído", type: "Cálculo", duration: "35 min", difficulty: "Médio", reason: "Aquecimento de reconhecimento tático." },
   { day: 2, status: "Concluído", type: "Finais", duration: "40 min", difficulty: "Difícil", reason: "A técnica de finais precisa de repetição direcionada." },
@@ -116,10 +118,10 @@ function formatTournamentStatus(status) {
 
 function recommendationClasses(level) {
   const styles = {
-    Best: "border-purple-400/50 bg-purple-500/20 text-purple-100 shadow-[0_0_18px_rgba(168,85,247,0.35)]",
-    "Highly recommended": "border-emerald-400/40 bg-emerald-500/15 text-emerald-200",
-    Good: "border-sky-400/35 bg-sky-500/15 text-sky-200",
-    "Low priority": "border-slate-500/25 bg-slate-500/10 text-slate-300",
+    Best: "border-purple-400/30 bg-slate-950/55 text-purple-100 shadow-[inset_2px_0_0_rgba(168,85,247,0.55)]",
+    "Highly recommended": "border-emerald-400/25 bg-slate-950/55 text-emerald-100 shadow-[inset_2px_0_0_rgba(52,211,153,0.45)]",
+    Good: "border-sky-400/22 bg-slate-950/55 text-sky-100 shadow-[inset_2px_0_0_rgba(56,189,248,0.42)]",
+    "Low priority": "border-slate-500/20 bg-slate-950/50 text-slate-300 shadow-[inset_2px_0_0_rgba(148,163,184,0.32)]",
   };
 
   return styles[level] || styles.Good;
@@ -256,18 +258,6 @@ function buildCalendarDays(currentMonth) {
   }
 
   return cells;
-}
-
-function getMonthDateRange(currentMonth) {
-  const year = currentMonth.getFullYear();
-  const month = currentMonth.getMonth();
-  const start = new Date(year, month, 1, 0, 0, 0, 0);
-  const end = new Date(year, month + 1, 0, 23, 59, 59, 999);
-
-  return {
-    from: formatDateForApi(start),
-    to: formatDateForApi(end),
-  };
 }
 
 function normalizeTournament(apiTournament, index) {
@@ -564,22 +554,15 @@ function TournamentTab() {
 
   useEffect(() => {
     setPage(1);
-  }, [region, search, timeControl, upcomingOnly, currentMonth]);
+  }, [region, search, timeControl, upcomingOnly]);
 
   const buildTournamentQuery = (extra = {}) => {
-    const monthRange = getMonthDateRange(currentMonth);
-    const today = new Date();
-    const todayKey = formatDateForApi(today);
-    const from = upcomingOnly && monthRange.from < todayKey ? todayKey : monthRange.from;
-
     return {
       page,
       limit,
       state: region === "All regions" ? undefined : region,
       timeControl: timeControl === "All" ? undefined : String(timeControl).toLowerCase(),
       search: search.trim() || undefined,
-      from,
-      to: monthRange.to,
       ...extra,
     };
   };
@@ -635,14 +618,22 @@ function TournamentTab() {
     return () => {
       mounted = false;
     };
-  }, [region, search, timeControl, upcomingOnly, currentMonth, page, limit, tournamentReloadKey]);
+  }, [region, search, timeControl, upcomingOnly, page, limit, tournamentReloadKey]);
 
   const filteredTournaments = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     return tournaments.filter((tournament) => {
+      if (upcomingOnly) {
+        const relevantDate = tournament.parsedEndDate || tournament.parsedStartDate;
+        if (relevantDate && relevantDate < today) return false;
+      }
+
       if (recommendation === "All") return true;
       return tournament.recommendationLevel === recommendation;
     });
-  }, [tournaments, recommendation]);
+  }, [tournaments, recommendation, upcomingOnly]);
 
   const monthTournaments = useMemo(() => {
     return filteredTournaments
@@ -654,12 +645,25 @@ function TournamentTab() {
       });
   }, [filteredTournaments, currentMonth]);
 
+  const outOfMonthTournaments = useMemo(() => {
+    return filteredTournaments
+      .filter((tournament) => {
+        return tournament.parsedStartDate && !isSameMonth(tournament.parsedStartDate, currentMonth);
+      })
+      .sort((a, b) => {
+        const aTs = a.parsedStartDate ? a.parsedStartDate.getTime() : Number.MAX_SAFE_INTEGER;
+        const bTs = b.parsedStartDate ? b.parsedStartDate.getTime() : Number.MAX_SAFE_INTEGER;
+        return aTs - bTs;
+      });
+  }, [filteredTournaments, currentMonth]);
+
   const bestTournament = useMemo(() => {
-    if (monthTournaments.length === 0) return null;
-    return [...monthTournaments].sort(
+    const recommendationPool = monthTournaments.length > 0 ? monthTournaments : outOfMonthTournaments;
+    if (recommendationPool.length === 0) return null;
+    return [...recommendationPool].sort(
       (a, b) => b.recommendationScore - a.recommendationScore
     )[0];
-  }, [monthTournaments]);
+  }, [monthTournaments, outOfMonthTournaments]);
 
   const tournamentsByDay = useMemo(() => {
     return monthTournaments.reduce((days, tournament) => {
@@ -816,7 +820,7 @@ function TournamentTab() {
             <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <p className="text-sm font-medium uppercase tracking-[0.2em] text-purple-300">
-                  Melhor torneio do mês
+                  {monthTournaments.length > 0 ? "Melhor torneio do mês" : "Melhor torneio encontrado"}
                 </p>
                 <h2 className="mt-3 text-2xl font-semibold text-white">{bestTournament.name}</h2>
                 <p className="mt-2 text-sm text-slate-400">
@@ -914,23 +918,51 @@ function TournamentTab() {
                 ))}
               </div>
               <div className="grid grid-cols-7 gap-2">
-                {calendarDays.map((dayDate, index) => (
-                  <div key={`${dayDate ? dayDate.toISOString() : `empty-${index}`}`} className="min-h-28 rounded-xl border border-white/10 bg-slate-950/35 p-2 text-left">
-                    <p className="text-sm font-medium text-slate-300">{dayDate ? dayDate.getDate() : ""}</p>
-                    <div className="mt-2 grid gap-1.5">
-                      {((dayDate && tournamentsByDay[dayDate.getDate()]) || []).map((tournament) => (
-                        <button
-                          key={tournament.id}
-                          type="button"
-                          onClick={() => setSelectedTournament(tournament)}
-                          className={`truncate rounded-lg border px-2 py-1 text-left text-xs transition duration-200 hover:scale-[1.01] ${recommendationClasses(tournament.recommendationLevel)}`}
-                        >
-                          {tournament.name}
-                        </button>
-                      ))}
+                {calendarDays.map((dayDate, index) => {
+                  const dayTournaments = (dayDate && tournamentsByDay[dayDate.getDate()]) || [];
+                  const visibleDayTournaments = dayTournaments.slice(0, MAX_TOURNAMENTS_PER_DAY);
+                  const hiddenDayCount = Math.max(0, dayTournaments.length - visibleDayTournaments.length);
+
+                  return (
+                    <div
+                      key={`${dayDate ? dayDate.toISOString() : `empty-${index}`}`}
+                      className="h-36 rounded-xl border border-white/10 bg-slate-950/35 p-2 text-left"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-slate-300">{dayDate ? dayDate.getDate() : ""}</p>
+                        {dayTournaments.length > 0 && (
+                          <span className="rounded-full border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[10px] text-slate-400">
+                            {dayTournaments.length}
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-2 grid gap-1.5">
+                        {visibleDayTournaments.map((tournament) => (
+                          <button
+                            key={tournament.id}
+                            type="button"
+                            onClick={() => setSelectedTournament(tournament)}
+                            className={`truncate rounded-lg border px-2 py-1 text-left text-xs transition duration-200 hover:border-purple-400/35 hover:bg-purple-500/10 ${recommendationClasses(tournament.recommendationLevel)}`}
+                            title={tournament.name}
+                          >
+                            {tournament.name}
+                          </button>
+                        ))}
+                        {hiddenDayCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (dayTournaments[0]) setSelectedTournament(dayTournaments[0]);
+                            }}
+                            className="rounded-lg border border-white/10 bg-white/[0.025] px-2 py-1 text-left text-xs font-medium text-slate-400 transition hover:border-cyan-400/25 hover:bg-cyan-500/10 hover:text-cyan-100"
+                          >
+                            +{hiddenDayCount} mais na lista
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -948,6 +980,64 @@ function TournamentTab() {
                   >
                     {tournament.name} · {tournament.timeControl} · {tournament.state}
                   </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {monthTournaments.length === 0 && outOfMonthTournaments.length > 0 && (
+            <div className="mt-5 rounded-xl border border-cyan-400/20 bg-cyan-500/5 p-4">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-white">
+                    Torneios encontrados fora de {monthLabel}
+                  </h3>
+                  <p className="mt-1 text-xs leading-5 text-slate-400">
+                    A busca encontrou torneios em outros meses. Use o botão "Ver mês" para navegar até a data do evento.
+                  </p>
+                </div>
+                <span className="rounded-full border border-cyan-400/25 bg-cyan-500/10 px-3 py-1 text-xs text-cyan-100">
+                  {outOfMonthTournaments.length} encontrados
+                </span>
+              </div>
+
+              <div className="mt-3 grid max-h-72 gap-2 overflow-y-auto pr-1 [scrollbar-color:rgba(34,211,238,0.45)_rgba(15,23,42,0.35)] [scrollbar-width:thin]">
+                {outOfMonthTournaments.map((tournament) => (
+                  <div
+                    key={`out-of-month-${tournament.id}`}
+                    className="rounded-lg border border-white/10 bg-slate-950/45 px-3 py-2 text-sm text-slate-200 transition hover:border-cyan-400/35 hover:bg-cyan-500/10"
+                  >
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTournament(tournament)}
+                        className="min-w-0 text-left"
+                      >
+                        <span className="block truncate font-medium">{tournament.name}</span>
+                        <span className="mt-1 block text-xs text-slate-400">
+                          {formatTournamentDate(tournament.parsedStartDate)} · {tournament.city}/{tournament.state} · {tournament.timeControl}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedTournament(tournament);
+                          if (tournament.parsedStartDate) {
+                            setCurrentMonth(
+                              new Date(
+                                tournament.parsedStartDate.getFullYear(),
+                                tournament.parsedStartDate.getMonth(),
+                                1
+                              )
+                            );
+                          }
+                        }}
+                        className="shrink-0 rounded-lg border border-cyan-400/25 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-cyan-100 transition hover:border-cyan-300/50 hover:bg-cyan-500/15"
+                      >
+                        Ver mês
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -1208,7 +1298,7 @@ export default function Calendar() {
           Encontre torneios, planeje seus treinos e mantenha sua rotina de xadrez viva.
         </p>
 
-        <div className="mt-6 inline-flex rounded-xl border border-white/10 bg-slate-950/60 p-1">
+        <div className="mt-6 inline-flex gap-2 rounded-xl border border-white/10 bg-slate-950/60 p-1.5">
           {["Tournaments", "Training Plan"].map((tab) => (
             <button
               key={tab}

@@ -236,9 +236,9 @@ export default function ReviewPanel({
                 <div className="game-review-pills">
                   {[
                     "brilliant",
-                    "great",
-                    "best",
                     "excellent",
+                    "best",
+                    "great",
                     "good",
                     "book",
                     "inaccuracy",

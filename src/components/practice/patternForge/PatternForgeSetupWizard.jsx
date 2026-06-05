@@ -20,6 +20,60 @@ import ForgeProgressBar from "./ForgeProgressBar.jsx";
 
 const totalSteps = 6;
 
+function formatReasonConfidence(value) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue) || numericValue <= 0) return null;
+  return Math.round(numericValue <= 1 ? numericValue * 100 : numericValue);
+}
+
+function formatThemeReasonSource(sourceField = "", language = "pt-BR") {
+  const normalized = String(sourceField || "").toLowerCase();
+  const isPt = String(language || "").toLowerCase().startsWith("pt");
+
+  if (normalized.includes("skillmap")) return isPt ? "Mapa de habilidades" : "Skill map";
+  if (normalized.includes("recurringmistakes")) return isPt ? "Erros recorrentes" : "Recurring mistakes";
+  if (normalized.includes("openingrepertoire")) return isPt ? "Repertório de aberturas" : "Opening repertoire";
+  if (normalized.includes("recommendations") || normalized.includes("goals") || normalized.includes("decisionpatterns")) {
+    return isPt ? "Plano do coach" : "Coach plan";
+  }
+
+  return isPt ? "Perfil do jogador" : "Player profile";
+}
+
+function formatThemeReasonText(reason, language = "pt-BR") {
+  const rawReason = String(reason?.reason || "").trim();
+  const themeLabel = getThemeTitle(reason?.theme, language);
+  const isPt = String(language || "").toLowerCase().startsWith("pt");
+  const lowerReason = rawReason.toLowerCase();
+
+  if (!rawReason) {
+    return isPt
+      ? `${themeLabel} foi escolhido a partir dos sinais do seu perfil.`
+      : `${themeLabel} was selected from signals in your profile.`;
+  }
+
+  if (lowerReason.includes("low tactical pattern score")) {
+    return isPt ? "Padrões táticos precisam de reforço." : "Tactical patterns need reinforcement.";
+  }
+  if (lowerReason.includes("low calculation score")) {
+    return isPt ? "Cálculo aparece como prioridade de treino." : "Calculation appears as a training priority.";
+  }
+  if (lowerReason.includes("endgame score")) {
+    return isPt ? "Finais pedem treino técnico adicional." : "Endgames need additional technical practice.";
+  }
+  if (lowerReason.includes("opening score")) {
+    return isPt ? "O repertório de aberturas precisa de revisão." : "The opening repertoire needs review.";
+  }
+  if (lowerReason.includes("time management score")) {
+    return isPt ? "Há sinais de dificuldade sob pressão de tempo." : "There are signs of difficulty under time pressure.";
+  }
+  if (lowerReason.includes("low resilience score")) {
+    return isPt ? "Recursos defensivos sob pressão merecem atenção." : "Defensive resources under pressure need attention.";
+  }
+
+  return rawReason.length > 120 ? `${rawReason.slice(0, 117).trim()}...` : rawReason;
+}
+
 function StepHeader({ step, title, description }) {
   const { t } = useLanguage();
   const progress = ((step + 1) / totalSteps) * 100;
@@ -380,17 +434,17 @@ export default function PatternForgeSetupWizard({
                   {detectedThemeReasons.length ? (
                     <div className="mt-3 grid gap-3 md:grid-cols-2">
                       {detectedThemeReasons.slice(0, 4).map((reason) => {
-                        const confidence =
-                          Number(reason.confidence || 0) <= 1
-                            ? Number(reason.confidence || 0) * 100
-                            : Number(reason.confidence || 0);
+                        const confidence = formatReasonConfidence(reason.confidence);
 
                         return (
                           <div key={`${reason.theme}-${reason.sourceField}`} className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
                             <p className="font-semibold text-white">{getThemeTitle(reason.theme, language)}</p>
-                            <p className="mt-1 text-sm leading-5 text-slate-400">{reason.reason}</p>
+                            <p className="mt-1 text-sm leading-5 text-slate-400">
+                              {formatThemeReasonText(reason, language)}
+                            </p>
                             <p className="mt-2 text-xs text-purple-200">
-                              {reason.sourceField} · {Math.round(confidence)}%
+                              {formatThemeReasonSource(reason.sourceField, language)}
+                              {confidence ? ` · ${confidence}%` : ""}
                             </p>
                           </div>
                         );

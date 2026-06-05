@@ -115,50 +115,112 @@ function getNearbySquares(square: string) {
 function playBrilliantSound(soundEnabled: boolean) {
   if (!soundEnabled || typeof window === "undefined") return;
 
-  const soundCandidates = [
-    "/sounds/brilliant-impact.mp3",
-    "/sounds/brilliant.mp3",
-    "/sounds/move.mp3",
-  ];
+  const AudioContextClass =
+    window.AudioContext ||
+    (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
 
-  const playFallbackTone = () => {
-    const AudioContextClass =
-      window.AudioContext ||
-      (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioContextClass) return;
 
-    if (!AudioContextClass) return;
+  const context = new AudioContextClass();
+  const now = context.currentTime;
+  const master = context.createGain();
+  master.gain.setValueAtTime(0.78, now);
+  master.gain.exponentialRampToValueAtTime(0.0001, now + 1.08);
+  master.connect(context.destination);
 
-    const context = new AudioContextClass();
-    const now = context.currentTime;
+  const playOscillator = ({
+    type,
+    start,
+    end,
+    gain,
+    attack,
+    duration,
+    delay = 0,
+  }: {
+    type: OscillatorType;
+    start: number;
+    end: number;
+    gain: number;
+    attack: number;
+    duration: number;
+    delay?: number;
+  }) => {
     const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.type = "sawtooth";
-    oscillator.frequency.setValueAtTime(220, now);
-    oscillator.frequency.exponentialRampToValueAtTime(92, now + 0.22);
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.075, now + 0.018);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.32);
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.start(now);
-    oscillator.stop(now + 0.34);
+    const envelope = context.createGain();
+    const startAt = now + delay;
+
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(start, startAt);
+    oscillator.frequency.exponentialRampToValueAtTime(end, startAt + duration);
+    envelope.gain.setValueAtTime(0.0001, startAt);
+    envelope.gain.exponentialRampToValueAtTime(gain, startAt + attack);
+    envelope.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+    oscillator.connect(envelope);
+    envelope.connect(master);
+    oscillator.start(startAt);
+    oscillator.stop(startAt + duration + 0.04);
   };
 
-  const tryPlay = (index: number) => {
-    const src = soundCandidates[index];
-    if (!src) {
-      playFallbackTone();
-      return;
+  const playNoise = ({
+    delay,
+    duration,
+    gain,
+    frequency,
+    q,
+    type,
+  }: {
+    delay: number;
+    duration: number;
+    gain: number;
+    frequency: number;
+    q: number;
+    type: BiquadFilterType;
+  }) => {
+    const sampleRate = context.sampleRate;
+    const buffer = context.createBuffer(1, Math.floor(sampleRate * duration), sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let index = 0; index < data.length; index += 1) {
+      const fade = 1 - index / data.length;
+      data[index] = (Math.random() * 2 - 1) * fade;
     }
 
-    const audio = new Audio(src);
-    audio.volume = index === 0 ? 0.62 : 0.48;
-    audio.currentTime = 0;
-    audio.addEventListener("error", () => tryPlay(index + 1), { once: true });
-    audio.play().catch(() => tryPlay(index + 1));
+    const source = context.createBufferSource();
+    const filter = context.createBiquadFilter();
+    const envelope = context.createGain();
+    const startAt = now + delay;
+
+    source.buffer = buffer;
+    filter.type = type;
+    filter.frequency.setValueAtTime(frequency, startAt);
+    filter.Q.setValueAtTime(q, startAt);
+    envelope.gain.setValueAtTime(0.0001, startAt);
+    envelope.gain.exponentialRampToValueAtTime(gain, startAt + 0.018);
+    envelope.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+    source.connect(filter);
+    filter.connect(envelope);
+    envelope.connect(master);
+    source.start(startAt);
+    source.stop(startAt + duration + 0.02);
   };
 
-  tryPlay(0);
+  if (context.state === "suspended") {
+    context.resume().catch(() => {});
+  }
+
+  // Falling whoosh, low crash, board rumble, and a short cosmic shimmer.
+  playNoise({ delay: 0, duration: 0.42, gain: 0.1, frequency: 920, q: 0.7, type: "bandpass" });
+  playOscillator({ type: "triangle", start: 520, end: 130, gain: 0.04, attack: 0.02, duration: 0.42 });
+  playOscillator({ type: "sine", start: 96, end: 42, gain: 0.32, attack: 0.012, duration: 0.58, delay: 0.36 });
+  playOscillator({ type: "sawtooth", start: 142, end: 58, gain: 0.08, attack: 0.01, duration: 0.36, delay: 0.37 });
+  playNoise({ delay: 0.37, duration: 0.28, gain: 0.24, frequency: 260, q: 0.9, type: "lowpass" });
+  playNoise({ delay: 0.39, duration: 0.18, gain: 0.08, frequency: 2400, q: 1.6, type: "bandpass" });
+  playOscillator({ type: "sine", start: 820, end: 1240, gain: 0.026, attack: 0.018, duration: 0.32, delay: 0.43 });
+  playOscillator({ type: "triangle", start: 1240, end: 720, gain: 0.018, attack: 0.02, duration: 0.34, delay: 0.49 });
+
+  window.setTimeout(() => {
+    context.close().catch(() => {});
+  }, 1300);
 }
 
 export default function BrilliantMeteorEffect({

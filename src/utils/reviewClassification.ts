@@ -15,9 +15,9 @@ export type ReviewClassificationSummary = Record<ReviewClassification, number>;
 
 export const reviewClassificationOrder: ReviewClassification[] = [
   "brilliant",
-  "great",
-  "best",
   "excellent",
+  "best",
+  "great",
   "good",
   "book",
   "inaccuracy",
@@ -89,7 +89,7 @@ export function getClassificationMeta(classification?: string | null) {
     },
     great: {
       label: "Ótimo",
-      symbol: "!",
+      symbol: "↯",
       assetId: "great",
       color: "#7dd3fc",
       squareColor: "rgba(14, 165, 233, 0.42)",

@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { useLanguage } from "../contexts/LanguageContext.jsx";
 import MasterReplayPage from "../components/practice/masterReplay/MasterReplayPage.jsx";
-import PersonalReplayPage from "../components/practice/personalReplay/PersonalReplayPage.jsx";
 import PatternForgePage from "../components/practice/patternForge/PatternForgePage.jsx";
 import AcademyPage from "./AcademyPage.jsx";
 
@@ -37,6 +36,7 @@ const trainingModes = [
   {
     id: "personal-replay",
     icon: "search",
+    locked: true,
     gradient: "from-cyan-300/24 via-purple-500/16 to-emerald-300/12",
     visualTone: "border-cyan-200/25 bg-cyan-200/10 text-cyan-100",
     accentText: "text-cyan-200",
@@ -169,19 +169,28 @@ function VisualStage({ mode }) {
 
 function TrainingModeCard({ mode, selected, onSelect, onOpen }) {
   const { t } = useLanguage();
+  const isLocked = Boolean(mode.locked);
+  const handleSelect = () => {
+    onSelect();
+  };
+  const handleOpen = () => {
+    if (isLocked) return;
+    onOpen?.();
+  };
 
   return (
     <article
       role="button"
       tabIndex={0}
-      onClick={onSelect}
+      onClick={handleSelect}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          onSelect();
+          handleSelect();
         }
       }}
       aria-pressed={selected}
+      aria-disabled={isLocked}
       className={[
         "cursor-pointer",
         "group flex h-full flex-col rounded-[28px] border p-4 text-left transition-all duration-300",
@@ -196,9 +205,16 @@ function TrainingModeCard({ mode, selected, onSelect, onOpen }) {
       <div className="flex flex-1 flex-col px-1 pb-1 pt-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className={["text-xs font-semibold uppercase tracking-[0.18em]", mode.accentText].join(" ")}>
-              {getTrainingModeText(t, mode, "purpose")}
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className={["text-xs font-semibold uppercase tracking-[0.18em]", mode.accentText].join(" ")}>
+                {getTrainingModeText(t, mode, "purpose")}
+              </p>
+              {isLocked ? (
+                <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-300">
+                  {t("practice.soon")}
+                </span>
+              ) : null}
+            </div>
             <h2 className="mt-2 text-2xl font-semibold text-white">
               {getTrainingModeText(t, mode, "title")}
             </h2>
@@ -222,16 +238,19 @@ function TrainingModeCard({ mode, selected, onSelect, onOpen }) {
           onClick={(event) => {
             event.stopPropagation();
             onSelect();
-            onOpen?.();
+            handleOpen();
           }}
+          disabled={isLocked}
           className={[
             "mt-5 inline-flex w-fit items-center rounded-xl border px-4 py-2 text-sm font-semibold transition",
-            selected
+            isLocked
+              ? "cursor-not-allowed border-white/10 bg-slate-950/55 text-slate-500"
+              : selected
               ? mode.selectedButton
               : `border-white/10 bg-slate-950/40 text-slate-200 ${mode.idleButton}`,
           ].join(" ")}
         >
-          {getTrainingModeText(t, mode, "cta")}
+          {isLocked ? t("practice.soon") : getTrainingModeText(t, mode, "cta")}
         </button>
       </div>
     </article>
@@ -312,10 +331,6 @@ export default function Practice({ connectedUsername = "", playerProfile = null 
     return <MasterReplayPage onBackToPractice={() => setActiveExperience("practice")} />;
   }
 
-  if (activeExperience === "personal-replay") {
-    return <PersonalReplayPage onBackToPractice={() => setActiveExperience("practice")} />;
-  }
-
   if (activeExperience === "pattern-forge") {
     return (
       <PatternForgePage
@@ -356,7 +371,7 @@ export default function Practice({ connectedUsername = "", playerProfile = null 
                 : mode.id === "master-replay"
                   ? () => setActiveExperience("master-replay")
                   : mode.id === "personal-replay"
-                    ? () => setActiveExperience("personal-replay")
+                    ? undefined
                     : mode.id === "pattern-forge"
                       ? () => setActiveExperience("pattern-forge")
                 : undefined

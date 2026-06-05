@@ -16,6 +16,7 @@ const dictionaries = {
 
     "nav.home": "Início",
     "nav.games": "Partidas",
+    "nav.openings": "Aberturas",
     "nav.analysis": "Análise",
     "nav.practice": "Treino",
     "nav.academyAdmin": "Admin Academy",
@@ -1022,6 +1023,7 @@ const dictionaries = {
 
     "nav.home": "Home",
     "nav.games": "Games",
+    "nav.openings": "Openings",
     "nav.analysis": "Analysis",
     "nav.practice": "Practice",
     "nav.academyAdmin": "Academy Admin",

@@ -52,6 +52,25 @@ body {
   z-index: 1;
 }
 
+.astro-page-transition {
+  animation: astroPageEnter 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: top center;
+}
+
+@keyframes astroPageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.992);
+    filter: blur(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
 .astro-card {
   position: relative;
   overflow: hidden;
@@ -244,6 +263,241 @@ body {
 .games-list-scroll::-webkit-scrollbar-thumb:hover {
   background:
     linear-gradient(180deg, rgba(245, 243, 255, 0.98), rgba(192, 132, 252, 0.9), rgba(103, 232, 249, 0.72));
+}
+
+.astro-solar-stage {
+  position: relative;
+  min-height: 540px;
+  overflow: hidden;
+  border: 1px solid rgba(168, 85, 247, 0.18);
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(168, 85, 247, 0.18), transparent 22%),
+    radial-gradient(circle at 72% 22%, rgba(34, 211, 238, 0.09), transparent 24%),
+    linear-gradient(180deg, rgba(9, 9, 18, 0.82), rgba(5, 5, 12, 0.96));
+}
+
+.astro-solar-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border: 1px solid rgba(168, 85, 247, 0.22);
+  border-radius: 999px;
+  transform: translate(-50%, -50%) rotate(-16deg) scaleY(0.58);
+  pointer-events: none;
+}
+
+.astro-solar-ring-one {
+  width: 260px;
+  height: 260px;
+}
+
+.astro-solar-ring-two {
+  width: 420px;
+  height: 420px;
+  border-color: rgba(34, 211, 238, 0.16);
+}
+
+.astro-solar-ring-three {
+  width: 620px;
+  height: 620px;
+  border-color: rgba(168, 85, 247, 0.13);
+}
+
+.astro-central-star {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  width: 118px;
+  height: 118px;
+  place-items: center;
+  border: 1px solid rgba(216, 180, 254, 0.46);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.92), rgba(216, 180, 254, 0.78) 22%, rgba(168, 85, 247, 0.82) 48%, rgba(34, 211, 238, 0.32) 72%, rgba(8, 8, 18, 0.2));
+  box-shadow:
+    0 0 34px rgba(168, 85, 247, 0.55),
+    0 0 78px rgba(34, 211, 238, 0.18);
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  transform: translate(-50%, -50%);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.astro-central-star:hover {
+  transform: translate(-50%, -50%) scale(1.03);
+  box-shadow:
+    0 0 42px rgba(168, 85, 247, 0.68),
+    0 0 92px rgba(34, 211, 238, 0.24);
+}
+
+.astro-planet-orbit {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform: rotate(var(--orbit-angle));
+  transform-origin: center center;
+}
+
+.astro-planet {
+  position: absolute;
+  left: var(--orbit-radius);
+  top: 0;
+  display: grid;
+  gap: 0.55rem;
+  justify-items: center;
+  border: 0;
+  background: transparent;
+  color: white;
+  cursor: pointer;
+  transform: translate(-50%, -50%) rotate(var(--orbit-counter-angle));
+  transform-origin: center center;
+  transition: filter 180ms ease;
+}
+
+.astro-planet:hover,
+.astro-planet:focus-visible {
+  filter: drop-shadow(0 0 18px var(--planet-glow));
+  outline: none;
+}
+
+.astro-planet-core {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  border: 1px solid color-mix(in srgb, var(--planet-color) 55%, rgba(255, 255, 255, 0.18));
+  border-radius: 999px;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--planet-color) 88%, #ffffff 12%), var(--planet-color) 52%, rgba(7, 7, 17, 0.84));
+  box-shadow:
+    inset -8px -10px 0 rgba(0, 0, 0, 0.16),
+    inset 5px 6px 0 rgba(255, 255, 255, 0.08),
+    0 0 20px var(--planet-glow);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.astro-planet-core::before {
+  content: "";
+  position: absolute;
+  inset: 9px -10px;
+  border: 1px solid color-mix(in srgb, var(--planet-color) 65%, transparent);
+  border-radius: 999px;
+  opacity: 0.62;
+  transform: rotate(-18deg) scaleY(0.42);
+}
+
+.astro-planet-core::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.48);
+  box-shadow: 14px 15px 0 -4px rgba(255, 255, 255, 0.18);
+}
+
+.astro-planet:hover .astro-planet-core,
+.astro-planet:focus-visible .astro-planet-core {
+  transform: scale(1.12);
+  box-shadow:
+    inset -8px -10px 0 rgba(0, 0, 0, 0.14),
+    inset 5px 6px 0 rgba(255, 255, 255, 0.09),
+    0 0 30px var(--planet-glow);
+}
+
+.astro-planet-label {
+  max-width: 110px;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid rgba(168, 85, 247, 0.18);
+  border-radius: 999px;
+  background: rgba(7, 7, 17, 0.72);
+  color: #e5e7eb;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.astro-planet-info {
+  position: absolute;
+  left: 1.5rem;
+  bottom: 1.5rem;
+  max-width: 360px;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: 24px;
+  background: rgba(8, 8, 18, 0.78);
+  padding: 1.2rem;
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(14px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .astro-solar-ring-one {
+    animation: astroSolarDrift 38s linear infinite;
+  }
+
+  .astro-solar-ring-two {
+    animation: astroSolarDrift 54s linear infinite reverse;
+  }
+
+  .astro-solar-ring-three {
+    animation: astroSolarDrift 72s linear infinite;
+  }
+
+  .astro-planet-orbit {
+    animation: astroPlanetOrbit var(--orbit-duration) linear infinite;
+    animation-delay: var(--orbit-delay);
+  }
+
+  .astro-planet {
+    animation: astroPlanetCounterOrbit var(--orbit-duration) linear infinite;
+    animation-delay: var(--orbit-delay);
+  }
+
+  .astro-solar-stage:hover .astro-planet-orbit,
+  .astro-solar-stage:hover .astro-planet {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes astroSolarDrift {
+  from {
+    transform: translate(-50%, -50%) rotate(-16deg) scaleY(0.58);
+  }
+
+  to {
+    transform: translate(-50%, -50%) rotate(344deg) scaleY(0.58);
+  }
+}
+
+@keyframes astroPlanetOrbit {
+  from {
+    transform: rotate(var(--orbit-angle));
+  }
+
+  to {
+    transform: rotate(calc(var(--orbit-angle) + 360deg));
+  }
+}
+
+@keyframes astroPlanetCounterOrbit {
+  from {
+    transform: translate(-50%, -50%) rotate(var(--orbit-counter-angle));
+  }
+
+  to {
+    transform: translate(-50%, -50%) rotate(var(--orbit-counter-end-angle));
+  }
 }
 
 .review-layout {

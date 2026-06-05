@@ -59,7 +59,15 @@ export default function PathTimeline({ path, selectedLessonId, onSelectLesson })
         lessonIndex += moduleLessons.length;
 
         return (
-          <section key={module.id} className="relative rounded-[28px] border border-white/10 bg-white/[0.035] p-5">
+          <section
+            key={module.id}
+            className={[
+              "relative rounded-[28px] border p-4 transition duration-200 sm:p-5",
+              expanded
+                ? "border-violet-300/22 bg-violet-400/[0.04]"
+                : "border-white/10 bg-white/[0.03] hover:border-violet-300/25 hover:bg-violet-400/[0.035]",
+            ].join(" ")}
+          >
             {expanded ? (
               <div className="absolute bottom-6 left-8 top-28 w-px bg-gradient-to-b from-violet-300/28 via-white/10 to-transparent" />
             ) : null}
@@ -67,7 +75,7 @@ export default function PathTimeline({ path, selectedLessonId, onSelectLesson })
               type="button"
               onClick={() => toggleModule(module.id)}
               aria-expanded={expanded}
-              className="group relative z-10 w-full cursor-pointer rounded-2xl border border-white/10 bg-slate-950/35 p-4 text-left transition duration-200 hover:-translate-y-0.5 hover:border-violet-300/35 hover:bg-violet-400/[0.055] hover:shadow-[0_18px_44px_rgba(88,28,135,0.16)] focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-300/70"
+              className="group relative z-10 w-full cursor-pointer rounded-2xl border border-white/10 bg-slate-950/42 p-4 text-left transition duration-200 hover:-translate-y-0.5 hover:border-violet-300/35 hover:bg-violet-400/[0.055] hover:shadow-[0_18px_44px_rgba(88,28,135,0.16)] focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-300/70"
             >
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="min-w-0">
@@ -78,7 +86,10 @@ export default function PathTimeline({ path, selectedLessonId, onSelectLesson })
                     {t(`academy.module.${module.id}.title`, module.title)}
                   </h3>
                   <p
-                    className="mt-2 max-w-3xl text-sm leading-6 text-slate-400"
+                    className={[
+                      "mt-2 max-w-3xl text-sm text-slate-400",
+                      expanded ? "leading-6" : "leading-5",
+                    ].join(" ")}
                     style={
                       expanded
                         ? undefined
@@ -95,13 +106,15 @@ export default function PathTimeline({ path, selectedLessonId, onSelectLesson })
                 </div>
                 <div className="flex min-w-[210px] items-start justify-between gap-3 lg:justify-end">
                   <div className="grid gap-2 text-sm">
-                    <span className="rounded-full border border-white/10 bg-slate-950/45 px-3 py-1 text-xs font-medium text-slate-300">
-                      {t("academy.lessonCount", undefined, { count: moduleLessons.length })}
-                    </span>
-                    <span className="rounded-full border border-purple-300/20 bg-purple-300/[0.08] px-3 py-1 text-xs font-medium text-purple-100">
-                      {module.estimatedDuration || module.duration || "Duração a definir"}
-                    </span>
-                    <span className="text-xs font-semibold text-slate-400 transition group-hover:text-purple-100">
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <span className="rounded-full border border-white/10 bg-slate-950/45 px-3 py-1 text-xs font-medium text-slate-300">
+                        {t("academy.lessonCount", undefined, { count: moduleLessons.length })}
+                      </span>
+                      <span className="rounded-full border border-purple-300/20 bg-purple-300/[0.08] px-3 py-1 text-xs font-medium text-purple-100">
+                        {module.estimatedDuration || module.duration || "Duração a definir"}
+                      </span>
+                    </div>
+                    <span className="justify-self-end rounded-full border border-cyan-200/15 bg-cyan-200/[0.06] px-3 py-1 text-xs font-semibold text-cyan-100 transition group-hover:border-cyan-200/30">
                       {expanded ? "Recolher módulo" : "Expandir módulo"}
                     </span>
                   </div>

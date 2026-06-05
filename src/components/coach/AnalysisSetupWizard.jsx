@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLanguage } from "../../contexts/LanguageContext.jsx";
 import { getUserFriendlyError } from "../../utils/userFriendlyErrors.js";
 import { Badge, ProgressBar } from "../profileDelta/ProfileDeltaUi.jsx";
@@ -7,20 +8,20 @@ import AnalysisOverview from "./AnalysisOverview.jsx";
 
 export const DEFAULT_ANALYSIS_CONFIG = {
   timeControlPreset: "recommended_mix",
-  resultPreset: "wins_losses",
+  resultPreset: "all_games",
   filters: {
-    timeControls: ["blitz", "rapid"],
+    timeControls: ["bullet", "blitz", "rapid", "daily"],
     dateRange: {
-      type: "last_30_days",
+      type: "last_90_days",
       from: null,
       to: null,
     },
-    resultTypes: ["win", "loss"],
+    resultTypes: ["win", "loss", "draw"],
     color: "both",
-    ratedOnly: true,
-    maxGames: 50,
-    excludeVeryShortGames: true,
-    minimumMoves: 20,
+    ratedOnly: false,
+    maxGames: 100,
+    excludeVeryShortGames: false,
+    minimumMoves: 10,
   },
   analysisOptions: {
     includeRecurringMistakes: true,
@@ -67,15 +68,25 @@ const wizardSteps = [
   },
 ];
 
+const analysisStartedStates = new Set(["sending", "analyzing", "waiting"]);
+
+function getSubmissionProgress(state) {
+  if (state === "sending") return 32;
+  if (state === "analyzing") return 68;
+  if (state === "waiting") return 84;
+  if (state === "completed") return 100;
+  return 18;
+}
+
 const timeControlPresets = [
   {
     key: "recommended_mix",
     id: "recommended_mix",
     title: "Mistura recomendada",
     description:
-      "Melhor equilíbrio entre erros práticos e decisões mais sérias.",
+      "Inclui os ritmos principais para não perder padrões importantes da sua atividade recente.",
     badge: "Recomendado",
-    values: ["blitz", "rapid"],
+    values: ["bullet", "blitz", "rapid", "daily"],
     icon: "◎",
   },
   {
@@ -506,6 +517,7 @@ export default function AnalysisSetupWizard({
   submissionState = "idle",
   submissionMessage = "",
   submissionError = "",
+  submissionBatchId = "",
 }) {
   const { t } = useLanguage();
   const [stepIndex, setStepIndex] = useState(0);
@@ -579,13 +591,24 @@ export default function AnalysisSetupWizard({
 
   if (!isOpen) return null;
 
+  const hasAnalysisStarted = analysisStartedStates.has(submissionState) && !submissionError;
   const progressValue = ((stepIndex + 1) / wizardSteps.length) * 100;
+  const workflowProgressValue = getSubmissionProgress(submissionState);
   const currentStep = wizardSteps[stepIndex];
   const currentStepTitle = t(`analysisWizard.steps.${stepIndex}.title`, currentStep.title);
   const currentStepDescription = t(
     `analysisWizard.steps.${stepIndex}.description`,
     currentStep.description
   );
+  const modalTitle = hasAnalysisStarted
+    ? t("analysisWizard.startedTitle", "Análise iniciada")
+    : currentStepTitle;
+  const modalDescription = hasAnalysisStarted
+    ? t(
+        "analysisWizard.startedSubtitle",
+        "Seu lote foi enviado. Você pode fechar esta janela; o processamento continuará em segundo plano.",
+      )
+    : currentStepDescription;
 
   const canContinue =
     stepIndex === 0
@@ -661,6 +684,91 @@ export default function AnalysisSetupWizard({
     console.log("generalAnalysisRequestDraft", draftPreview);
     return onConfirm(draftPreview, config, samplePreview);
   };
+
+  const renderStartedContent = () => (
+    <div className="grid min-h-[34rem] place-items-center">
+      <div className="w-full max-w-3xl rounded-[30px] border border-purple-300/25 bg-[linear-gradient(135deg,rgba(88,28,135,0.20),rgba(15,23,42,0.82),rgba(8,8,14,0.94))] p-6 shadow-[0_26px_80px_rgba(0,0,0,0.28)] sm:p-8">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <Badge tone="purple">
+              {t("analysisWizard.batchStartedBadge", "Processamento ativo")}
+            </Badge>
+            <h3 className="mt-4 text-3xl font-semibold text-white">
+              {t("analysisWizard.startedTitle", "Análise iniciada")}
+            </h3>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
+              {t(
+                "analysisWizard.startedDescription",
+                "O AstroChess começou a analisar suas partidas e criar/atualizar seu perfil. Fechar esta janela não cancela a análise.",
+              )}
+            </p>
+          </div>
+          <Badge tone={submissionState === "waiting" ? "slate" : "purple"}>
+            {submissionState === "sending"
+              ? t("analysisWizard.sending")
+              : submissionState === "waiting"
+                ? t("analysisWizard.stillRunning")
+                : t("analysisWizard.analyzing")}
+          </Badge>
+        </div>
+
+        <div className="mt-7 rounded-2xl border border-white/10 bg-slate-950/45 p-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-white">
+                {submissionMessage || t("analysisWizard.workflowDescription")}
+              </p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                {t(
+                  "analysisWizard.backgroundNotice",
+                  "Você pode navegar para outras abas. O lote continuará rodando no servidor.",
+                )}
+              </p>
+            </div>
+            <span className="text-sm font-semibold text-cyan-100">
+              {workflowProgressValue}%
+            </span>
+          </div>
+          <ProgressBar value={workflowProgressValue} className="mt-4" />
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+              {t("analysisWizard.selectedGames", "Partidas no lote")}
+            </p>
+            <p className="mt-2 text-xl font-semibold text-white">
+              {samplePreview.selectedGamesCount} {t("analysisWizard.games")}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+              {t("analysisWizard.estimatedTime", "Tempo estimado")}
+            </p>
+            <p className="mt-2 text-xl font-semibold text-white">
+              {samplePreview.estimatedLabel}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+              {t("analysisWizard.batchId", "ID do lote")}
+            </p>
+            <p className="mt-2 truncate text-sm font-semibold text-white">
+              {submissionBatchId || t("analysisWizard.generatingBatchId", "Gerando...")}
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-7 w-full rounded-2xl border border-cyan-300/25 bg-cyan-300/[0.10] px-5 py-3 text-sm font-semibold text-cyan-100 transition hover:border-cyan-200/45 hover:bg-cyan-300/[0.15]"
+        >
+          {t("analysisWizard.closeAndContinue", "Fechar, a análise continuará")}
+        </button>
+      </div>
+    </div>
+  );
 
   const renderStepContent = () => {
     if (stepIndex === 0) {
@@ -997,7 +1105,7 @@ export default function AnalysisSetupWizard({
     return <AnalysisOverview draft={draftPreview} sample={samplePreview} />;
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex min-h-screen items-center justify-center bg-slate-950/72 p-4 backdrop-blur-md">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.18),transparent_36%)]" />
 
@@ -1015,10 +1123,10 @@ export default function AnalysisSetupWizard({
                 </Badge>
               </div>
               <h2 className="mt-4 text-2xl font-semibold text-white sm:text-3xl">
-                {currentStepTitle}
+                {modalTitle}
               </h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
-                {currentStepDescription}
+                {modalDescription}
               </p>
             </div>
 
@@ -1027,12 +1135,14 @@ export default function AnalysisSetupWizard({
               onClick={onClose}
               className="self-start rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-purple-500/30 hover:text-white"
             >
-              {t("analysisWizard.cancel")}
+              {hasAnalysisStarted
+                ? t("analysisWizard.closeAndContinueShort", "Fechar sem cancelar")
+                : t("analysisWizard.cancel")}
             </button>
           </div>
 
           <div className="mt-5 grid gap-3">
-            <ProgressBar value={progressValue} />
+            <ProgressBar value={hasAnalysisStarted ? workflowProgressValue : progressValue} />
             <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-6">
               {wizardSteps.map((step, index) => {
                 const isCurrent = index === stepIndex;
@@ -1061,7 +1171,7 @@ export default function AnalysisSetupWizard({
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-6 sm:px-8">
-          {(submissionState !== "idle" && submissionState !== "completed") || submissionError ? (
+          {(!hasAnalysisStarted && submissionState !== "idle" && submissionState !== "completed") || submissionError ? (
             <div
               className={[
                 "mb-6 rounded-[24px] border p-5",
@@ -1106,9 +1216,9 @@ export default function AnalysisSetupWizard({
             </div>
           ) : null}
 
-          {renderStepContent()}
+          {hasAnalysisStarted ? renderStartedContent() : renderStepContent()}
 
-          {samplePreviewLoading || samplePreviewError ? (
+          {!hasAnalysisStarted && (samplePreviewLoading || samplePreviewError) ? (
             <div
               className={[
                 "mt-5 rounded-2xl border p-4 text-sm",
@@ -1123,6 +1233,23 @@ export default function AnalysisSetupWizard({
         </div>
 
         <div className="border-t border-white/10 bg-[#0d1017] px-6 py-4 sm:px-8">
+          {hasAnalysisStarted ? (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm leading-6 text-slate-400">
+                {t(
+                  "analysisWizard.footerBackgroundNotice",
+                  "Fechar esta janela não interrompe o processamento. O perfil será atualizado quando o lote terminar.",
+                )}
+              </p>
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-2xl border border-cyan-300/25 bg-cyan-300/[0.10] px-5 py-2.5 text-sm font-semibold text-cyan-100 transition hover:border-cyan-200/45 hover:bg-cyan-300/[0.15]"
+              >
+                {t("analysisWizard.closeAndContinueShort", "Fechar sem cancelar")}
+              </button>
+            </div>
+          ) : (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-slate-400">
               {samplePreviewLoading
@@ -1167,8 +1294,10 @@ export default function AnalysisSetupWizard({
               )}
             </div>
           </div>
+          )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

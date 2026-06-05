@@ -30,6 +30,125 @@ function getSkillEntries(skillMap = {}) {
     }));
 }
 
+function SkillConstellationChart({ skills, overallScore }) {
+  const visibleSkills = skills.slice(0, 8).map((skill) => ({
+    ...skill,
+    value: clampScore(skill.value),
+  }));
+  const center = 50;
+  const maxRadius = 34;
+  const labelRadius = 45;
+  const points = visibleSkills.map((skill, index) => {
+    const angle = -90 + (360 / visibleSkills.length) * index;
+    const radians = (angle * Math.PI) / 180;
+    const radius = 7 + (skill.value / 100) * maxRadius;
+
+    return {
+      ...skill,
+      x: center + radius * Math.cos(radians),
+      y: center + radius * Math.sin(radians),
+      axisX: center + maxRadius * Math.cos(radians),
+      axisY: center + maxRadius * Math.sin(radians),
+      labelX: center + labelRadius * Math.cos(radians),
+      labelY: center + labelRadius * Math.sin(radians),
+    };
+  });
+  const polygonPoints = points.map((point) => `${point.x},${point.y}`).join(" ");
+
+  return (
+    <div className="rounded-3xl border border-purple-500/25 bg-slate-950/60 p-4 shadow-inner shadow-purple-950/20">
+      <div className="relative mx-auto aspect-square w-full max-w-[460px]">
+        <svg
+          viewBox="0 0 100 100"
+          className="h-full w-full overflow-visible"
+          role="img"
+          aria-label={`Skill Matrix com pontuação geral ${overallScore}`}
+        >
+          <defs>
+            <radialGradient id="analysisSkillGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="rgba(34,211,238,0.28)" />
+              <stop offset="62%" stopColor="rgba(168,85,247,0.12)" />
+              <stop offset="100%" stopColor="rgba(168,85,247,0)" />
+            </radialGradient>
+            <linearGradient id="analysisSkillFill" x1="0%" x2="100%" y1="0%" y2="100%">
+              <stop offset="0%" stopColor="rgba(34,211,238,0.34)" />
+              <stop offset="56%" stopColor="rgba(168,85,247,0.28)" />
+              <stop offset="100%" stopColor="rgba(236,72,153,0.16)" />
+            </linearGradient>
+          </defs>
+
+          <circle cx="50" cy="50" r="43" fill="url(#analysisSkillGlow)" />
+          {[12, 23, 34].map((radius) => (
+            <circle
+              key={radius}
+              cx="50"
+              cy="50"
+              r={radius}
+              fill="none"
+              stroke="rgba(148,163,184,0.18)"
+              strokeWidth="0.45"
+            />
+          ))}
+
+          {points.map((point) => (
+            <line
+              key={`${point.key}-axis`}
+              x1="50"
+              y1="50"
+              x2={point.axisX}
+              y2={point.axisY}
+              stroke="rgba(168,85,247,0.22)"
+              strokeWidth="0.45"
+            />
+          ))}
+
+          <polygon
+            points={polygonPoints}
+            fill="url(#analysisSkillFill)"
+            stroke="rgba(34,211,238,0.78)"
+            strokeLinejoin="round"
+            strokeWidth="0.9"
+          />
+
+          {points.map((point) => (
+            <g key={point.key}>
+              <circle cx={point.x} cy={point.y} r="1.9" fill="#e9d5ff" />
+              <circle
+                cx={point.x}
+                cy={point.y}
+                r="3.8"
+                fill="none"
+                stroke="rgba(34,211,238,0.4)"
+                strokeWidth="0.5"
+              />
+            </g>
+          ))}
+        </svg>
+
+        <div className="pointer-events-none absolute inset-0">
+          {points.map((point) => (
+            <div
+              key={`${point.key}-label`}
+              className="absolute w-24 -translate-x-1/2 -translate-y-1/2 text-center"
+              style={{ left: `${point.labelX}%`, top: `${point.labelY}%` }}
+            >
+              <p className="truncate text-[11px] font-semibold text-slate-200">{point.label}</p>
+              <p className="text-[10px] text-purple-200">{point.value}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="absolute left-1/2 top-1/2 grid h-24 w-24 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-purple-300/30 bg-[#070711]/90 text-center shadow-[0_0_34px_rgba(168,85,247,0.24)]">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-100">Score</p>
+            <p className="mt-1 text-3xl font-semibold text-white">{overallScore}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SkillMapCard({ skillMap, timeRange }) {
   const skillEntries = getSkillEntries(skillMap);
   const overallScore =
@@ -62,24 +181,9 @@ export default function SkillMapCard({ skillMap, timeRange }) {
         </Badge>
       </div>
 
-      <div className="grid gap-8 xl:grid-cols-[380px_1fr] xl:items-center">
-        <div className="flex flex-col items-center justify-center rounded-3xl border border-purple-500/25 bg-slate-950/60 p-8 shadow-inner shadow-purple-950/20">
-          <div
-            className="grid h-56 w-56 place-items-center rounded-full border border-purple-400/40 shadow-[0_0_70px_rgba(168,85,247,0.28)]"
-            style={{
-              background: `conic-gradient(rgb(168 85 247) ${clampScore(overallScore) * 3.6}deg, rgba(255,255,255,0.08) 0deg)`,
-            }}
-          >
-            <div className="grid h-40 w-40 place-items-center rounded-full border border-white/10 bg-[#090b10] text-center shadow-2xl shadow-black/40">
-              <div>
-                <p className="text-xs uppercase tracking-[0.22em] text-purple-300">
-                  Pontuação geral
-                </p>
-                <p className="mt-2 text-6xl font-semibold text-white">{overallScore}</p>
-                <p className="mt-1 text-xs text-slate-500">de 100</p>
-              </div>
-            </div>
-          </div>
+      <div className="grid gap-8 xl:grid-cols-[minmax(380px,0.9fr)_1.1fr] xl:items-center">
+        <div className="grid gap-4">
+          <SkillConstellationChart skills={skillEntries} overallScore={overallScore} />
           <div className="mt-6 grid w-full gap-3">
             <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Leitura mais forte</p>

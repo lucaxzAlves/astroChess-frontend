@@ -16,6 +16,9 @@ type ReviewBoardProps = {
   brilliantEffectTriggerKey?: string | number | null;
   soundEnabled?: boolean;
   disabled?: boolean;
+  maxBoardWidth?: number;
+  shellMaxWidth?: number;
+  viewportHeightRatio?: number;
 };
 
 function getSquareMarkerPosition(square: string, orientation: "white" | "black") {
@@ -69,6 +72,9 @@ export default function ReviewBoard({
   brilliantEffectTriggerKey,
   soundEnabled = true,
   disabled = false,
+  maxBoardWidth = 680,
+  shellMaxWidth = 780,
+  viewportHeightRatio = 0.76,
 }: ReviewBoardProps) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const boardFrameRef = useRef<HTMLDivElement | null>(null);
@@ -80,8 +86,8 @@ export default function ReviewBoard({
 
     const syncBoardWidth = () => {
       const width = wrapperRef.current?.clientWidth ?? 620;
-      const viewportLimit = Math.floor(window.innerHeight * 0.76);
-      const max = Math.min(width, viewportLimit, 680);
+      const viewportLimit = Math.floor(window.innerHeight * viewportHeightRatio);
+      const max = Math.min(width, viewportLimit, maxBoardWidth);
       const min = Math.min(280, width);
       setBoardWidth(Math.max(min, Math.floor(max)));
     };
@@ -95,7 +101,7 @@ export default function ReviewBoard({
       observer.disconnect();
       window.removeEventListener("resize", syncBoardWidth);
     };
-  }, []);
+  }, [maxBoardWidth, viewportHeightRatio]);
 
   useEffect(() => {
     setSelectedSquare(null);
@@ -159,9 +165,9 @@ export default function ReviewBoard({
       styles[selectedSquare] = {
         ...(styles[selectedSquare] || {}),
         background:
-          "linear-gradient(135deg, rgba(250, 204, 21, 0.42), rgba(168, 85, 247, 0.24))",
+          "linear-gradient(135deg, rgba(14, 165, 233, 0.34), rgba(15, 23, 42, 0.26))",
         boxShadow:
-          "inset 0 0 0 4px rgba(250, 204, 21, 0.82), 0 0 22px rgba(250, 204, 21, 0.26)",
+          "inset 0 0 0 4px rgba(37, 99, 235, 0.78), 0 0 22px rgba(14, 165, 233, 0.24)",
       };
     }
 
@@ -170,8 +176,8 @@ export default function ReviewBoard({
       styles[square] = {
         ...(styles[square] || {}),
         background: hasPiece
-          ? "radial-gradient(circle, transparent 48%, rgba(250, 204, 21, 0.45) 50%, rgba(168, 85, 247, 0.28) 64%, transparent 66%)"
-          : "radial-gradient(circle, rgba(250, 204, 21, 0.72) 0 16%, transparent 18%)",
+          ? "radial-gradient(circle, transparent 48%, rgba(14, 165, 233, 0.42) 50%, rgba(37, 99, 235, 0.28) 64%, transparent 66%)"
+          : "radial-gradient(circle, rgba(14, 165, 233, 0.72) 0 16%, transparent 18%)",
       };
     });
 
@@ -220,6 +226,11 @@ export default function ReviewBoard({
       return;
     }
 
+    if (canSelectSquare(square)) {
+      setSelectedSquare(square);
+      return;
+    }
+
     const moved = onMove(selectedSquare, square);
     if (moved) {
       setSelectedSquare(null);
@@ -230,8 +241,12 @@ export default function ReviewBoard({
   };
 
   return (
-    <div className="game-review-board-shell">
-      <div ref={wrapperRef} className="game-review-board-wrapper">
+    <div className="game-review-board-shell" style={{ maxWidth: `${shellMaxWidth}px` }}>
+      <div
+        ref={wrapperRef}
+        className="game-review-board-wrapper"
+        style={{ width: `min(${Math.round(viewportHeightRatio * 100)}vh, ${maxBoardWidth}px)` }}
+      >
         <div
           ref={boardFrameRef}
           className="game-review-board-frame"
@@ -248,12 +263,11 @@ export default function ReviewBoard({
             customSquareStyles={squareStyles}
             customDropSquareStyle={{
               boxShadow:
-                "inset 0 0 0 4px rgba(250, 204, 21, 0.8), 0 0 24px rgba(250, 204, 21, 0.28)",
+                "inset 0 0 0 4px rgba(37, 99, 235, 0.78), 0 0 24px rgba(14, 165, 233, 0.26)",
             }}
             areArrowsAllowed={false}
             arePiecesDraggable={!disabled}
             showBoardNotation
-            snapToCursor
             isDraggablePiece={({ sourceSquare }) => canSelectSquare(sourceSquare)}
             onPieceDragBegin={(_, sourceSquare) => {
               if (canSelectSquare(sourceSquare)) {

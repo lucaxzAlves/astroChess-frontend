@@ -27,6 +27,24 @@ const navigationItems = [
     ),
   },
   {
+    label: "Openings",
+    translationKey: "nav.openings",
+    icon: (
+      <>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M5 12h4m10 0h-4M9 12a3 3 0 0 1 3-3m3 3a3 3 0 0 0-3-3m0 0V5m0 4v10"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M7 7.5 12 5l5 2.5M7 16.5 12 19l5-2.5"
+        />
+      </>
+    ),
+  },
+  {
     label: "Analysis",
     translationKey: "nav.analysis",
     icon: (
@@ -97,7 +115,7 @@ function getUserEmail(user) {
   return user.email || "";
 }
 
-export default function Sidebar({ activeItem, onActiveItemChange }) {
+export default function Sidebar({ activeItem, onActiveItemChange, chessComAvatar = "" }) {
   const { user, isAuthenticated, logout } = useAuth();
   const { language, setLanguage, supportedLanguages, t } = useLanguage();
 
@@ -117,12 +135,12 @@ export default function Sidebar({ activeItem, onActiveItemChange }) {
   const userInitial = String(userName).charAt(0).toUpperCase() || "U";
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-72 shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-purple-500/20 bg-[linear-gradient(180deg,#070711,#0d0b18_48%,#060610)] px-4 py-5 text-slate-300 shadow-xl shadow-black/30 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <div className="relative z-10 mb-8 flex items-center gap-4 px-2">
+    <aside className="fixed left-0 top-0 z-40 flex h-screen w-72 shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-purple-500/20 bg-[linear-gradient(180deg,#070711,#0d0b18_48%,#060610)] px-3 py-4 text-slate-300 shadow-xl shadow-black/30 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="relative z-10 mb-6 flex items-center gap-3 px-2">
         <img
           src={brandLogoSrc}
           alt="astroChess logo"
-          className="h-16 w-16 shrink-0 object-contain"
+          className="h-14 w-14 shrink-0 object-contain"
         />
 
         <div className="min-w-0">
@@ -133,7 +151,7 @@ export default function Sidebar({ activeItem, onActiveItemChange }) {
         </div>
       </div>
 
-      <nav className="relative z-10 flex flex-1 flex-col gap-1.5">
+      <nav className="relative z-10 flex flex-1 flex-col gap-1">
         {navigationItems.map((item) => {
           const isActive = activeItem === item.label;
 
@@ -143,7 +161,7 @@ export default function Sidebar({ activeItem, onActiveItemChange }) {
               type="button"
               onClick={() => onActiveItemChange(item.label)}
               className={[
-                "group relative flex w-full items-center gap-3 rounded-lg border border-transparent px-3 py-3 text-sm font-medium transition-all duration-200",
+                "group relative flex w-full items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 text-sm font-medium transition-all duration-200",
                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#080a0e]",
                 isActive
                   ? "border-purple-400/40 bg-[linear-gradient(135deg,rgba(124,58,237,0.20),rgba(34,211,238,0.06))] text-purple-100 shadow-inner shadow-purple-950/20"
@@ -160,7 +178,7 @@ export default function Sidebar({ activeItem, onActiveItemChange }) {
 
               <span
                 className={[
-                  "grid h-9 w-9 shrink-0 place-items-center rounded-md transition-colors duration-200",
+                  "grid h-8 w-8 shrink-0 place-items-center rounded-md transition-colors duration-200",
                   isActive
                     ? "bg-purple-500/15 text-cyan-100"
                     : "bg-white/[0.03] text-slate-500 group-hover:text-purple-300",
@@ -179,7 +197,7 @@ export default function Sidebar({ activeItem, onActiveItemChange }) {
         })}
       </nav>
 
-      <div className="relative z-10 mt-6 rounded-xl border border-purple-500/20 bg-white/[0.04] p-3">
+      <div className="relative z-10 mt-4 rounded-xl border border-purple-500/20 bg-white/[0.04] p-2.5">
         <label className="grid gap-2 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
           {t("language.label")}
           <select
@@ -197,11 +215,19 @@ export default function Sidebar({ activeItem, onActiveItemChange }) {
       </div>
 
       {isAuthenticated ? (
-        <div className="relative z-10 mt-6 rounded-xl border border-purple-500/20 bg-white/[0.04] p-3">
+        <div className="relative z-10 mt-4 rounded-xl border border-purple-500/20 bg-white/[0.04] p-2.5">
           <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-purple-300 to-fuchsia-400 text-sm font-bold text-slate-950">
-              {userInitial}
-            </div>
+            {chessComAvatar ? (
+              <img
+                src={chessComAvatar}
+                alt=""
+                className="h-9 w-9 shrink-0 rounded-full border border-purple-300/30 object-cover shadow-[0_0_18px_rgba(168,85,247,0.18)]"
+              />
+            ) : (
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-purple-300 to-fuchsia-400 text-sm font-bold text-slate-950">
+                {userInitial}
+              </div>
+            )}
 
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-white">{userName}</p>
@@ -214,7 +240,7 @@ export default function Sidebar({ activeItem, onActiveItemChange }) {
           <button
             type="button"
             onClick={handleLogout}
-            className="mt-3 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-purple-400/60 hover:text-white"
+            className="mt-2.5 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-purple-400/60 hover:text-white"
           >
             {t("sidebar.logout")}
           </button>
@@ -223,7 +249,7 @@ export default function Sidebar({ activeItem, onActiveItemChange }) {
         <button
           type="button"
           onClick={handleGoToLogin}
-          className="group relative z-10 mt-6 flex w-full items-center justify-center rounded-xl border border-purple-500/40 bg-purple-500/15 p-3 text-sm font-semibold text-purple-200 transition-all duration-200 hover:border-purple-400 hover:bg-purple-500/30 hover:text-white"
+          className="group relative z-10 mt-4 flex w-full items-center justify-center rounded-xl border border-purple-500/40 bg-purple-500/15 p-2.5 text-sm font-semibold text-purple-200 transition-all duration-200 hover:border-purple-400 hover:bg-purple-500/30 hover:text-white"
         >
           {t("sidebar.login")}
         </button>

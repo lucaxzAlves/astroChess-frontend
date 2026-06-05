@@ -1,42 +1,180 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../contexts/LanguageContext.jsx";
-import { formatUnixDate, getCountryDisplay } from "../services/chessComApi.js";
+import {
+  formatUnixDate,
+  getCountryDisplay,
+  parseChessComGame,
+} from "../services/chessComApi.js";
 
-const trainingFocus = [
+const solarNavigationItems = [
   {
-    titleKey: "home.focus.calculation.title",
-    title: "Calculation",
-    descriptionKey: "home.focus.calculation.description",
-    description: "Sharpen forcing lines and reduce tactical oversights.",
+    id: "games",
+    label: "Games",
+    planetName: "Game Archive",
+    description: "Revise suas batalhas recentes e abra reviews rapidamente.",
+    targetPage: "Games",
+    color: "#a855f7",
+    glow: "rgba(168,85,247,0.45)",
+    orbitRadius: "220px",
+    orbitAngle: "178deg",
+    orbitCounterAngle: "-178deg",
+    orbitCounterEndAngle: "-538deg",
+    orbitDuration: "52s",
+    orbitDelay: "-8s",
   },
   {
-    titleKey: "home.focus.endgames.title",
-    title: "Endgames",
-    descriptionKey: "home.focus.endgames.description",
-    description: "Review rook endings and conversion technique.",
+    id: "analysis",
+    label: "Analysis",
+    planetName: "Analysis Observatory",
+    description: "Decodifique forças, fraquezas e bloqueadores de evolução.",
+    targetPage: "Analysis",
+    color: "#22d3ee",
+    glow: "rgba(34,211,238,0.42)",
+    orbitRadius: "160px",
+    orbitAngle: "238deg",
+    orbitCounterAngle: "-238deg",
+    orbitCounterEndAngle: "-598deg",
+    orbitDuration: "42s",
+    orbitDelay: "-14s",
   },
   {
-    titleKey: "home.focus.openings.title",
-    title: "Opening review",
-    descriptionKey: "home.focus.openings.description",
-    description: "Patch early middlegame plans in your main repertoire.",
+    id: "openings",
+    label: "Openings",
+    planetName: "Opening Observatory",
+    description: "Explore seu repertório pessoal a partir das partidas analisadas.",
+    targetPage: "Openings",
+    color: "#f59e0b",
+    glow: "rgba(245,158,11,0.38)",
+    orbitRadius: "198px",
+    orbitAngle: "274deg",
+    orbitCounterAngle: "-274deg",
+    orbitCounterEndAngle: "-634deg",
+    orbitDuration: "50s",
+    orbitDelay: "-18s",
+  },
+  {
+    id: "practice",
+    label: "Practice",
+    planetName: "Training Planet",
+    description: "Treine com Academy, replays e ciclos de Pattern Forge.",
+    targetPage: "Practice",
+    color: "#7c3aed",
+    glow: "rgba(124,58,237,0.45)",
+    orbitRadius: "190px",
+    orbitAngle: "334deg",
+    orbitCounterAngle: "-334deg",
+    orbitCounterEndAngle: "-694deg",
+    orbitDuration: "48s",
+    orbitDelay: "-20s",
+  },
+  {
+    id: "coach",
+    label: "AI Coach",
+    planetName: "Coach Core",
+    description: "Receba planos de treino personalizados pelo seu perfil.",
+    targetPage: "AI Coach",
+    color: "#ec4899",
+    glow: "rgba(236,72,153,0.38)",
+    orbitRadius: "240px",
+    orbitAngle: "14deg",
+    orbitCounterAngle: "-14deg",
+    orbitCounterEndAngle: "-374deg",
+    orbitDuration: "58s",
+    orbitDelay: "-28s",
+  },
+  {
+    id: "calendar",
+    label: "Calendar",
+    planetName: "Tournament Orbit",
+    description: "Encontre eventos e torneios relevantes para competir.",
+    targetPage: "Calendar",
+    color: "#60a5fa",
+    glow: "rgba(96,165,250,0.38)",
+    orbitRadius: "250px",
+    orbitAngle: "104deg",
+    orbitCounterAngle: "-104deg",
+    orbitCounterEndAngle: "-464deg",
+    orbitDuration: "62s",
+    orbitDelay: "-38s",
   },
 ];
 
-const quickActions = [
-  { key: "home.quickAnalyze", label: "Analyze games" },
-  { key: "home.quickCoach", label: "Open AI Coach" },
-  { key: "home.quickCalendar", label: "View calendar" },
+const skillLabels = {
+  calculation: "Cálculo",
+  positionalUnderstanding: "Compreensão posicional",
+  openings: "Aberturas",
+  tacticalThemes: "Temas táticos",
+  endgames: "Finais",
+  middlegame: "Meio-jogo",
+  timeManagement: "Gestão do tempo",
+  psychologicalResilience: "Resiliência psicológica",
+};
+
+const missionCards = [
+  {
+    title: "Analisar jogos recentes",
+    description: "Gere novas evidências para o Skill Matrix e para o AI Coach.",
+    priority: "Alta",
+    time: "10-20 min",
+    targetPage: "AI Coach",
+  },
+  {
+    title: "Continuar Pattern Forge",
+    description: "Retome ciclos de repetição e fortaleça reconhecimento de padrões.",
+    priority: "Treino",
+    time: "15 min",
+    targetPage: "Practice",
+  },
+  {
+    title: "Revisar momentos críticos",
+    description: "Abra seus jogos e transforme erros recentes em material de treino.",
+    priority: "Foco",
+    time: "12 min",
+    targetPage: "Games",
+  },
+  {
+    title: "Checar torneios",
+    description: "Veja eventos próximos e planeje sua próxima missão competitiva.",
+    priority: "Agenda",
+    time: "3 min",
+    targetPage: "Calendar",
+  },
 ];
 
 function DashboardCard({ children, className = "" }) {
-  return (
-    <div
-      className={`astro-card transition-all duration-200 ${className}`}
-    >
-      {children}
-    </div>
-  );
+  return <div className={`astro-card transition-all duration-200 ${className}`}>{children}</div>;
+}
+
+function profileInitial(username) {
+  return username?.charAt(0)?.toUpperCase() || "?";
+}
+
+function clampScore(value) {
+  return Math.max(0, Math.min(100, Number(value) || 0));
+}
+
+function getSkillStatus(score) {
+  if (score >= 80) return "Órbita estável";
+  if (score >= 65) return "Em ascensão";
+  if (score >= 50) return "Instável";
+  return "Deriva crítica";
+}
+
+function getSkillEntries(skillMap = {}) {
+  return Object.entries(skillMap)
+    .filter(([key, value]) => key !== "overallScore" && value && typeof value === "object")
+    .map(([key, value]) => ({
+      key,
+      label: skillLabels[key] || key.replace(/([A-Z])/g, " $1"),
+      value: clampScore(value.value ?? value.score),
+      description: value.description,
+      confidence: value.confidence,
+    }));
+}
+
+function getRatingGames(record = {}, fallback) {
+  const total = (record.win || 0) + (record.loss || 0) + (record.draw || 0);
+  return total || fallback;
 }
 
 function UsernameField({
@@ -51,7 +189,7 @@ function UsernameField({
   const { t } = useLanguage();
 
   return (
-    <div className="mt-6 space-y-3">
+    <div className="space-y-3">
       <label className="block text-sm font-medium text-slate-300" htmlFor="username">
         {t("home.chessUsername")}
       </label>
@@ -66,11 +204,11 @@ function UsernameField({
         placeholder={t("home.usernamePlaceholder")}
         className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-3 text-sm text-white outline-none transition duration-200 placeholder:text-slate-600 focus:border-purple-500/60 focus:ring-4 focus:ring-purple-500/10"
       />
-      {connectError && (
+      {connectError ? (
         <p className="rounded-xl border border-rose-500/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
           {connectError}
         </p>
-      )}
+      ) : null}
       {connectSuccess && !connectError ? (
         <p className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
           {connectSuccess}
@@ -80,7 +218,7 @@ function UsernameField({
         type="button"
         onClick={() => onConnect(username)}
         disabled={isConnecting}
-        className="w-full rounded-xl bg-purple-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-950/30 transition duration-200 hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0f16]"
+        className="astro-button-primary w-full rounded-xl px-4 py-3 text-sm font-semibold transition duration-200 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0f16]"
       >
         {isConnecting ? t("home.savingUsername") : buttonLabel}
       </button>
@@ -88,7 +226,7 @@ function UsernameField({
   );
 }
 
-function OnboardingCard({
+function OnboardingCommandCenter({
   username,
   onUsernameChange,
   onConnect,
@@ -99,90 +237,665 @@ function OnboardingCard({
   const { t } = useLanguage();
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
-      <DashboardCard className="w-full max-w-md p-6">
-        <div className="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-xl border border-purple-500/30 bg-purple-500/10 text-purple-300">
-          <svg
-            aria-hidden="true"
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth="1.8"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M8 21h8M9 17h6l1-8h-2.5L12 4 10.5 9H8l1 8Z"
-            />
-          </svg>
+    <section className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-6xl items-center py-4">
+      <DashboardCard className="relative flex min-h-[calc(100vh-9rem)] w-full items-center overflow-hidden p-6 sm:p-8 lg:p-10">
+        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-purple-500/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 left-12 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
+        <div className="relative grid w-full items-center gap-8 xl:grid-cols-[minmax(42rem,1fr)_minmax(22rem,26rem)] xl:gap-12">
+          <div className="mx-auto max-w-[46rem] text-center lg:mx-0 lg:text-left">
+            <p className="astro-eyebrow">Astro Chess</p>
+            <h1 className="mt-4 max-w-[44rem] text-balance text-4xl font-semibold leading-[1.06] text-white sm:text-5xl xl:text-[3.55rem]">
+              Conecte sua conta Chess.com ao centro de comando
+            </h1>
+            <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base xl:mx-0">
+              Navegue por jogos, análise, treino, AI Coach e torneios a partir do seu
+              universo pessoal de xadrez.
+            </p>
+            <div className="mx-auto mt-7 grid max-w-2xl gap-3 sm:grid-cols-3 xl:mx-0">
+              {["Perfil real", "Dados vivos", "Treino personalizado"].map((item) => (
+                <div key={item} className="rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3 text-sm font-medium text-slate-200">
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mx-auto w-full max-w-md rounded-[28px] border border-purple-300/20 bg-slate-950/55 p-5 shadow-[0_24px_60px_rgba(0,0,0,0.24)] sm:p-6 xl:mx-0">
+            <div className="flex items-start gap-4">
+              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-purple-300/25 bg-purple-300/[0.08] text-purple-100">
+                ♛
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-xl font-semibold text-white">{t("home.connectTitle")}</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-400">{t("home.connectDescription")}</p>
+              </div>
+            </div>
+            <div className="mt-7 rounded-2xl border border-white/10 bg-slate-950/45 p-4">
+              <UsernameField
+                username={username}
+                onUsernameChange={onUsernameChange}
+                onConnect={onConnect}
+                isConnecting={isConnecting}
+                connectError={connectError}
+                connectSuccess={connectSuccess}
+                buttonLabel={t("home.saveAndConnect")}
+              />
+            </div>
+          </div>
+        </div>
+      </DashboardCard>
+    </section>
+  );
+}
+
+function CosmicHero({ playerProfile, connectedUsername, ratings, onNavigate }) {
+  const bestRating = ratings
+    .map((rating) => Number(rating.current || 0))
+    .filter(Boolean)
+    .sort((a, b) => b - a)[0];
+
+  return (
+    <section className="relative overflow-hidden rounded-[28px] border border-purple-300/22 bg-[linear-gradient(180deg,rgba(18,18,31,0.94),rgba(8,8,17,0.98))] p-6 shadow-[0_12px_28px_rgba(0,0,0,0.24)] sm:p-8">
+      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-purple-300/70 to-transparent" />
+      <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+        <div className="max-w-3xl">
+          <div className="inline-flex flex-wrap items-center gap-2 rounded-full border border-purple-300/25 bg-slate-950/55 px-3 py-2 shadow-[0_0_24px_rgba(168,85,247,0.12)]">
+            <span className="h-2 w-2 rounded-full bg-cyan-200 shadow-[0_0_14px_rgba(34,211,238,0.8)]" />
+            <span className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-100">
+              Astro Command Center
+            </span>
+            <span className="rounded-full border border-cyan-300/20 bg-cyan-300/[0.08] px-2.5 py-0.5 text-[11px] font-semibold text-cyan-100">
+              Chess.com conectado
+            </span>
+          </div>
+          <h1 className="mt-4 text-4xl font-semibold text-white sm:text-6xl">
+            Bem-vindo de volta, {playerProfile.username || connectedUsername}
+          </h1>
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
+            Navegue por jogos, treino, análise, torneios e seu plano de evolução a
+            partir do seu universo pessoal de xadrez.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => onNavigate?.("AI Coach")}
+              className="astro-button-primary rounded-xl px-5 py-3 text-sm font-semibold transition"
+            >
+              Abrir AI Coach
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate?.("Practice")}
+              className="astro-button-secondary rounded-xl px-5 py-3 text-sm font-semibold transition"
+            >
+              Ir para Practice
+            </button>
+          </div>
         </div>
 
-        <h1 className="text-2xl font-semibold text-white">
-          {t("home.connectTitle")}
-        </h1>
-        <p className="mt-2 text-sm leading-6 text-slate-400">
-          {t("home.connectDescription")}
-        </p>
+        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+          <HeroSignal label="Rating principal" value={bestRating || "N/A"} />
+          <HeroSignal label="País" value={getCountryDisplay(playerProfile.country)} />
+          <HeroSignal label="Entrou em" value={formatUnixDate(playerProfile.joined)} />
+        </div>
+      </div>
+    </section>
+  );
+}
 
-        <UsernameField
-          username={username}
-          onUsernameChange={onUsernameChange}
-          onConnect={onConnect}
-          isConnecting={isConnecting}
-          connectError={connectError}
-          connectSuccess={connectSuccess}
-          buttonLabel={t("home.saveAndConnect")}
-        />
-      </DashboardCard>
+function HeroSignal({ label, value }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
+      <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{label}</p>
+      <p className="mt-2 text-lg font-semibold text-white">{value}</p>
     </div>
   );
 }
 
-function RatingCard({ label, current, best, games }) {
+function SolarSystemNavigation({ onNavigate }) {
+  const [hoveredPlanet, setHoveredPlanet] = useState(solarNavigationItems[0]);
+  const activePlanet = hoveredPlanet || solarNavigationItems[0];
+
+  return (
+    <DashboardCard className="overflow-hidden p-6">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div>
+          <p className="astro-eyebrow">Astro Map</p>
+          <h2 className="mt-2 text-3xl font-semibold text-white">Navigation System</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+            Cada planeta abre uma área principal da plataforma. Passe o mouse para
+            inspecionar a órbita ou clique para navegar.
+          </p>
+        </div>
+        <div className="rounded-full border border-purple-300/20 bg-purple-300/[0.08] px-3 py-1 text-xs font-semibold text-purple-100">
+          Sistema ativo
+        </div>
+      </div>
+
+      <div className="mt-6 hidden lg:block">
+        <div className="astro-solar-stage">
+          <div className="astro-solar-ring astro-solar-ring-one" />
+          <div className="astro-solar-ring astro-solar-ring-two" />
+          <div className="astro-solar-ring astro-solar-ring-three" />
+          <button
+            type="button"
+            onClick={() => onNavigate?.("Home")}
+            className="astro-central-star"
+            aria-label="Home"
+          >
+            <span>Astro</span>
+          </button>
+
+          {solarNavigationItems.map((item) => (
+            <span
+              key={item.id}
+              className="astro-planet-orbit"
+              style={{
+                "--planet-color": item.color,
+                "--planet-glow": item.glow,
+                "--orbit-radius": item.orbitRadius,
+                "--orbit-angle": item.orbitAngle,
+                "--orbit-counter-angle": item.orbitCounterAngle,
+                "--orbit-counter-end-angle": item.orbitCounterEndAngle,
+                "--orbit-duration": item.orbitDuration,
+                "--orbit-delay": item.orbitDelay,
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => onNavigate?.(item.targetPage)}
+                onMouseEnter={() => setHoveredPlanet(item)}
+                onFocus={() => setHoveredPlanet(item)}
+                className="astro-planet"
+              >
+                <span className="astro-planet-core" />
+                <span className="astro-planet-label">{item.label}</span>
+              </button>
+            </span>
+          ))}
+
+          <div className="astro-planet-info">
+            <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/80">
+              {activePlanet.label}
+            </p>
+            <h3 className="mt-2 text-2xl font-semibold text-white">{activePlanet.planetName}</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-300">{activePlanet.description}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-3 lg:hidden">
+        {solarNavigationItems.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onNavigate?.(item.targetPage)}
+            className="rounded-2xl border border-purple-300/18 bg-slate-950/45 p-4 text-left transition hover:border-purple-300/38"
+          >
+            <div className="flex items-center gap-3">
+              <span
+                className="h-5 w-5 rounded-full shadow-[0_0_18px_var(--planet-glow)]"
+                style={{ background: item.color, "--planet-glow": item.glow }}
+              />
+              <div>
+                <p className="font-semibold text-white">{item.planetName}</p>
+                <p className="mt-1 text-sm leading-5 text-slate-400">{item.description}</p>
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </DashboardCard>
+  );
+}
+
+function PlayerSignalCard({
+  playerProfile,
+  username,
+  onUsernameChange,
+  onConnect,
+  isConnecting,
+  connectError,
+  connectSuccess,
+}) {
   const { t } = useLanguage();
 
   return (
-    <DashboardCard className="p-5">
-      <div className="flex items-start justify-between gap-4">
+    <DashboardCard className="p-6">
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <div className="mb-3 h-1.5 w-10 rounded-full bg-purple-400 shadow-[0_0_14px_rgba(192,132,252,0.7)]" />
-          <p className="text-sm font-medium text-slate-300">{label}</p>
+          <p className="astro-eyebrow">Player Signal</p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">Player Profile</h2>
         </div>
-        <span className="grid h-9 w-9 place-items-center rounded-lg border border-purple-500/25 bg-purple-500/10 text-xs font-semibold text-purple-300">
-          {label.charAt(0)}
+        <span className="rounded-full border border-emerald-300/25 bg-emerald-300/[0.08] px-3 py-1 text-xs font-semibold text-emerald-100">
+          Online signal
         </span>
       </div>
 
-      <div className="mt-5">
-        <p className="text-3xl font-semibold leading-none text-white">{current}</p>
-        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-          <div className="rounded-lg bg-slate-950/50 p-3">
-            <p className="text-xs text-slate-500">{t("home.best")}</p>
-            <p className="mt-1 font-medium text-purple-300">{best}</p>
+      <div className="mt-6 flex items-center gap-4">
+        {playerProfile.avatar ? (
+          <img
+            src={playerProfile.avatar}
+            alt={`${playerProfile.username} avatar`}
+            className="h-20 w-20 shrink-0 rounded-[24px] border border-white/10 object-cover"
+          />
+        ) : (
+          <div className="grid h-20 w-20 shrink-0 place-items-center rounded-[24px] border border-purple-300/25 bg-gradient-to-br from-purple-300 to-fuchsia-400 text-2xl font-bold text-slate-950">
+            {profileInitial(playerProfile.username)}
           </div>
-          <div className="rounded-lg bg-slate-950/50 p-3">
-            <p className="text-xs text-slate-500">{t("home.games")}</p>
-            <p className="mt-1 font-medium text-slate-200">{games}</p>
+        )}
+        <div className="min-w-0">
+          <p className="truncate text-2xl font-semibold text-white">
+            {playerProfile.username || t("common.na")}
+          </p>
+          <p className="mt-1 text-sm text-purple-200">{playerProfile.status || t("common.na")}</p>
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        {[
+          ["País", getCountryDisplay(playerProfile.country)],
+          ["Criado em", formatUnixDate(playerProfile.joined)],
+          ["Último acesso", formatUnixDate(playerProfile.last_online)],
+        ].map(([label, value]) => (
+          <div key={label} className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
+            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{label}</p>
+            <p className="mt-2 break-words text-sm font-medium text-slate-200">{value}</p>
           </div>
+        ))}
+      </div>
+
+      <div className="mt-6 rounded-[24px] border border-white/10 bg-slate-950/35 p-4">
+        <p className="text-sm font-semibold text-white">Atualizar sinal Chess.com</p>
+        <p className="mt-1 text-xs leading-5 text-slate-500">
+          Troque o username conectado sem sair do centro de comando.
+        </p>
+        <div className="mt-4">
+          <UsernameField
+            username={username}
+            onUsernameChange={onUsernameChange}
+            onConnect={onConnect}
+            isConnecting={isConnecting}
+            connectError={connectError}
+            connectSuccess={connectSuccess}
+            buttonLabel="Atualizar conexão"
+          />
         </div>
       </div>
     </DashboardCard>
   );
 }
 
-function profileInitial(username) {
-  return username?.charAt(0)?.toUpperCase() || "?";
+function RatingOrbitCard({ ratings }) {
+  const { t } = useLanguage();
+
+  return (
+    <DashboardCard className="p-6">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="astro-eyebrow">Rating Satellites</p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">Ratings</h2>
+        </div>
+        <span className="rounded-full border border-purple-300/20 bg-purple-300/[0.08] px-3 py-1 text-xs font-semibold text-purple-100">
+          Live stats
+        </span>
+      </div>
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        {ratings.map((rating) => (
+          <div key={rating.label} className="rounded-[24px] border border-white/10 bg-slate-950/45 p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-white">{rating.label}</p>
+                <p className="mt-2 text-3xl font-semibold text-white">
+                  {rating.current ?? t("common.na")}
+                </p>
+              </div>
+              <span className="grid h-10 w-10 place-items-center rounded-full border border-cyan-300/20 bg-cyan-300/[0.08] text-sm font-semibold text-cyan-100">
+                {rating.label.charAt(0)}
+              </span>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-xl bg-slate-950/55 p-3">
+                <p className="text-xs text-slate-500">Melhor</p>
+                <p className="mt-1 font-medium text-purple-200">{rating.best ?? t("common.na")}</p>
+              </div>
+              <div className="rounded-xl bg-slate-950/55 p-3">
+                <p className="text-xs text-slate-500">Jogos</p>
+                <p className="mt-1 font-medium text-slate-200">
+                  {getRatingGames(rating.record, t("common.na"))}
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </DashboardCard>
+  );
+}
+
+function SkillConstellationChart({ skills, overallScore }) {
+  const visibleSkills = skills.slice(0, 8);
+  const center = 50;
+  const maxRadius = 34;
+  const labelRadius = 44;
+  const points = visibleSkills.map((skill, index) => {
+    const angle = -90 + (360 / visibleSkills.length) * index;
+    const radians = (angle * Math.PI) / 180;
+    const radius = 7 + (skill.value / 100) * maxRadius;
+    const labelX = center + labelRadius * Math.cos(radians);
+    const labelY = center + labelRadius * Math.sin(radians);
+
+    return {
+      ...skill,
+      x: center + radius * Math.cos(radians),
+      y: center + radius * Math.sin(radians),
+      axisX: center + maxRadius * Math.cos(radians),
+      axisY: center + maxRadius * Math.sin(radians),
+      labelX,
+      labelY,
+    };
+  });
+  const polygonPoints = points.map((point) => `${point.x},${point.y}`).join(" ");
+
+  return (
+    <div className="rounded-[28px] border border-purple-300/20 bg-slate-950/45 p-4">
+      <div className="relative mx-auto aspect-square w-full max-w-[440px]">
+        <svg
+          viewBox="0 0 100 100"
+          className="h-full w-full overflow-visible"
+          role="img"
+          aria-label={`Skill Matrix com pontuação geral ${overallScore}`}
+        >
+          <defs>
+            <radialGradient id="skillConstellationGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="rgba(34,211,238,0.28)" />
+              <stop offset="60%" stopColor="rgba(168,85,247,0.12)" />
+              <stop offset="100%" stopColor="rgba(168,85,247,0)" />
+            </radialGradient>
+            <linearGradient id="skillConstellationFill" x1="0%" x2="100%" y1="0%" y2="100%">
+              <stop offset="0%" stopColor="rgba(34,211,238,0.34)" />
+              <stop offset="55%" stopColor="rgba(168,85,247,0.28)" />
+              <stop offset="100%" stopColor="rgba(236,72,153,0.16)" />
+            </linearGradient>
+          </defs>
+
+          <circle cx="50" cy="50" r="43" fill="url(#skillConstellationGlow)" />
+          {[12, 23, 34].map((radius) => (
+            <circle
+              key={radius}
+              cx="50"
+              cy="50"
+              r={radius}
+              fill="none"
+              stroke="rgba(148,163,184,0.18)"
+              strokeWidth="0.45"
+            />
+          ))}
+
+          {points.map((point) => (
+            <line
+              key={`${point.key}-axis`}
+              x1="50"
+              y1="50"
+              x2={point.axisX}
+              y2={point.axisY}
+              stroke="rgba(168,85,247,0.22)"
+              strokeWidth="0.45"
+            />
+          ))}
+
+          <polygon
+            points={polygonPoints}
+            fill="url(#skillConstellationFill)"
+            stroke="rgba(34,211,238,0.78)"
+            strokeWidth="0.9"
+            strokeLinejoin="round"
+          />
+
+          {points.map((point) => (
+            <g key={point.key}>
+              <circle cx={point.x} cy={point.y} r="1.9" fill="#e9d5ff" />
+              <circle
+                cx={point.x}
+                cy={point.y}
+                r="3.8"
+                fill="none"
+                stroke="rgba(34,211,238,0.4)"
+                strokeWidth="0.5"
+              />
+            </g>
+          ))}
+        </svg>
+
+        <div className="pointer-events-none absolute inset-0">
+          {points.map((point) => (
+            <div
+              key={`${point.key}-label`}
+              className="absolute w-24 -translate-x-1/2 -translate-y-1/2 text-center"
+              style={{ left: `${point.labelX}%`, top: `${point.labelY}%` }}
+            >
+              <p className="truncate text-[11px] font-semibold text-slate-200">{point.label}</p>
+              <p className="text-[10px] text-purple-200">{point.value}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="absolute left-1/2 top-1/2 grid h-24 w-24 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-purple-300/30 bg-[#070711]/90 text-center shadow-[0_0_34px_rgba(168,85,247,0.24)]">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-100">Score</p>
+            <p className="mt-1 text-3xl font-semibold text-white">{overallScore}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HomeSkillMatrixPreview({ analysisProfile, onNavigate }) {
+  const skillEntries = getSkillEntries(analysisProfile?.skillMap);
+  const overallScore =
+    analysisProfile?.skillMap?.overallScore ??
+    Math.round(skillEntries.reduce((sum, skill) => sum + skill.value, 0) / (skillEntries.length || 1));
+
+  if (!skillEntries.length) {
+    return (
+      <DashboardCard className="p-6">
+        <p className="astro-eyebrow">Skill Matrix</p>
+        <h2 className="mt-2 text-2xl font-semibold text-white">Skill Matrix bloqueado</h2>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
+          Rode uma análise geral no AI Coach para gerar seu perfil de xadrez e liberar
+          o mapa compacto de habilidades na Home.
+        </p>
+        <button
+          type="button"
+          onClick={() => onNavigate?.("AI Coach")}
+          className="astro-button-secondary mt-5 rounded-xl px-5 py-3 text-sm font-semibold transition"
+        >
+          Criar meu perfil
+        </button>
+      </DashboardCard>
+    );
+  }
+
+  return (
+    <DashboardCard className="p-6">
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+        <div>
+          <p className="astro-eyebrow">Skill Matrix</p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">Preview diagnóstico</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+            Seu perfil atual mapeado a partir das partidas analisadas.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => onNavigate?.("Analysis")}
+          className="astro-button-secondary rounded-xl px-4 py-2.5 text-sm font-semibold transition"
+        >
+          Ver análise completa
+        </button>
+      </div>
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(360px,0.95fr)_1.05fr] xl:items-center">
+        <SkillConstellationChart skills={skillEntries} overallScore={overallScore} />
+
+        <div className="grid gap-3 md:grid-cols-2">
+          {skillEntries.map((skill) => (
+            <div key={skill.key} className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-medium text-white">{skill.label}</p>
+                  <p className="mt-1 text-xs text-slate-500">{getSkillStatus(skill.value)}</p>
+                </div>
+                <span className="rounded-full border border-purple-300/20 bg-purple-300/[0.08] px-2.5 py-1 text-sm font-semibold text-purple-100">
+                  {skill.value}
+                </span>
+              </div>
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-purple-300 to-cyan-200"
+                  style={{ width: `${skill.value}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </DashboardCard>
+  );
+}
+
+function MissionControl({ onNavigate, hasSkillProfile }) {
+  const missions = hasSkillProfile
+    ? missionCards
+    : [
+        {
+          title: "Construir Skill Matrix",
+          description: "Crie seu perfil de jogador antes de iniciar missões avançadas.",
+          priority: "Primeiro passo",
+          time: "10 min",
+          targetPage: "AI Coach",
+        },
+        ...missionCards.slice(0, 3),
+      ];
+
+  return (
+    <DashboardCard className="p-6">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div>
+          <p className="astro-eyebrow">Mission Control</p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">Ações sugeridas</h2>
+        </div>
+        <span className="rounded-full border border-cyan-300/20 bg-cyan-300/[0.08] px-3 py-1 text-xs font-semibold text-cyan-100">
+          Próximos passos
+        </span>
+      </div>
+
+      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {missions.map((mission) => (
+          <button
+            key={mission.title}
+            type="button"
+            onClick={() => onNavigate?.(mission.targetPage)}
+            className="rounded-[24px] border border-white/10 bg-slate-950/40 p-4 text-left transition hover:-translate-y-0.5 hover:border-purple-300/35 hover:bg-purple-300/[0.055]"
+          >
+            <span className="rounded-full border border-purple-300/20 bg-purple-300/[0.08] px-2.5 py-1 text-xs font-semibold text-purple-100">
+              {mission.priority}
+            </span>
+            <h3 className="mt-4 font-semibold text-white">{mission.title}</h3>
+            <p className="mt-2 min-h-16 text-sm leading-6 text-slate-400">{mission.description}</p>
+            <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
+              <span>{mission.time}</span>
+              <span>Abrir →</span>
+            </div>
+          </button>
+        ))}
+      </div>
+    </DashboardCard>
+  );
+}
+
+function RecentFlightLog({ recentGames, onNavigate, onReviewGame }) {
+  return (
+    <DashboardCard className="p-6">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div>
+          <p className="astro-eyebrow">Recent Flight Log</p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">Atividade recente</h2>
+        </div>
+        <button
+          type="button"
+          onClick={() => onNavigate?.("Games")}
+          className="astro-button-secondary rounded-xl px-4 py-2.5 text-sm font-semibold transition"
+        >
+          Abrir Games
+        </button>
+      </div>
+
+      <div className="mt-6 grid gap-3">
+        {recentGames.length ? (
+          recentGames.map((game) => (
+            <div
+              key={game.id}
+              className="grid gap-3 rounded-2xl border border-white/10 bg-slate-950/40 p-4 lg:grid-cols-[1fr_auto] lg:items-center"
+            >
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold text-white">vs {game.opponent}</span>
+                  <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                    game.result === "Win"
+                      ? "border-emerald-300/20 bg-emerald-300/[0.08] text-emerald-100"
+                      : game.result === "Loss"
+                        ? "border-rose-300/20 bg-rose-300/[0.08] text-rose-100"
+                        : "border-slate-300/20 bg-slate-300/[0.08] text-slate-200"
+                  }`}>
+                    {game.result}
+                  </span>
+                  <span className="text-xs text-slate-500">{game.timeControl}</span>
+                </div>
+                <p className="mt-2 truncate text-sm text-slate-400" title={game.opening}>
+                  {game.date} · {game.opening || "Abertura não detectada"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  onReviewGame?.({
+                    id: game.id,
+                    pgn: game.pgn,
+                    players: { white: game.whitePlayer, black: game.blackPlayer },
+                    gameMeta: game,
+                  })
+                }
+                className="rounded-xl border border-purple-300/25 bg-purple-300/[0.08] px-4 py-2 text-sm font-semibold text-purple-100 transition hover:border-purple-300/45 hover:bg-purple-300/[0.14]"
+              >
+                Review
+              </button>
+            </div>
+          ))
+        ) : (
+          <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-5 text-sm leading-6 text-slate-400">
+            Nenhum jogo recente carregado nesta sessão. Abra Games para buscar partidas.
+          </div>
+        )}
+      </div>
+    </DashboardCard>
+  );
 }
 
 export default function Home({
   connectedUsername,
   playerProfile,
   parsedStats,
+  analysisProfile,
+  playerGames = [],
   isConnecting,
   connectError,
   connectSuccess,
   onConnect,
+  onNavigate,
+  onReviewGame,
   initialUsername,
 }) {
   const { t } = useLanguage();
@@ -192,9 +905,28 @@ export default function Home({
     setUsername(initialUsername || "");
   }, [initialUsername]);
 
+  const ratings = useMemo(
+    () => [
+      { label: "Bullet", ...(parsedStats?.ratings?.bullet || {}) },
+      { label: "Blitz", ...(parsedStats?.ratings?.blitz || {}) },
+      { label: "Rapid", ...(parsedStats?.ratings?.rapid || {}) },
+      { label: "Daily", ...(parsedStats?.ratings?.daily || {}) },
+    ],
+    [parsedStats],
+  );
+
+  const recentGames = useMemo(() => {
+    if (!connectedUsername) return [];
+    return playerGames
+      .slice(0, 5)
+      .map((game) => parseChessComGame(game, connectedUsername));
+  }, [connectedUsername, playerGames]);
+
+  const hasSkillProfile = getSkillEntries(analysisProfile?.skillMap).length > 0;
+
   if (!playerProfile) {
     return (
-      <OnboardingCard
+      <OnboardingCommandCenter
         username={username}
         onUsernameChange={setUsername}
         onConnect={onConnect}
@@ -205,183 +937,39 @@ export default function Home({
     );
   }
 
-  const ratings = [
-    { label: "Bullet", ...parsedStats?.ratings?.bullet },
-    { label: "Blitz", ...parsedStats?.ratings?.blitz },
-    { label: "Rapid", ...parsedStats?.ratings?.rapid },
-    { label: "Daily", ...parsedStats?.ratings?.daily },
-  ];
-  const totals = parsedStats?.totals || {};
-  const stats = [
-    { label: t("home.totalGames"), value: totals.totalGames ?? t("common.na") },
-    { label: t("home.wins"), value: totals.wins ?? t("common.na") },
-    { label: t("home.losses"), value: totals.losses ?? t("common.na") },
-    { label: t("home.draws"), value: totals.draws ?? t("common.na") },
-    { label: t("home.winRate"), value: totals.winRate ?? t("common.na") },
-  ];
-  const getRatingGames = (record = {}) =>
-    (record.win || 0) + (record.loss || 0) + (record.draw || 0) || t("common.na");
-
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <div className="flex flex-col justify-between gap-4 rounded-2xl border border-white/10 bg-gradient-to-br from-purple-500/10 via-white/[0.04] to-transparent p-6 sm:flex-row sm:items-end">
-        <div>
-          <p className="text-sm font-medium text-purple-300">{t("home.personalDashboard")}</p>
-          <h1 className="mt-2 text-3xl font-semibold text-white">
-            {t("home.welcomeBack", undefined, {
-              name: playerProfile.username || connectedUsername,
-            })}
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
-            {t("home.connectedDescription")}
-          </p>
-        </div>
+      <CosmicHero
+        playerProfile={playerProfile}
+        connectedUsername={connectedUsername}
+        ratings={ratings}
+        onNavigate={onNavigate}
+      />
 
-        <div className="rounded-full border border-purple-500/30 bg-purple-500/10 px-4 py-2 text-sm font-medium text-purple-300">
-          {t("home.chessConnected")}
-        </div>
+      <SolarSystemNavigation onNavigate={onNavigate} />
+
+      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+        <PlayerSignalCard
+          playerProfile={playerProfile}
+          username={username}
+          onUsernameChange={setUsername}
+          onConnect={onConnect}
+          isConnecting={isConnecting}
+          connectError={connectError}
+          connectSuccess={connectSuccess}
+        />
+        <RatingOrbitCard ratings={ratings} />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.35fr]">
-        <DashboardCard className="p-6">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-sm font-semibold text-white">{t("home.connectionTitle")}</h2>
-                <p className="mt-1 text-xs text-slate-500">
-                  {t("home.connectionDescription")}
-                </p>
-              </div>
-              <span className="rounded-full border border-purple-500/25 bg-purple-500/10 px-3 py-1 text-xs font-medium text-purple-300">
-                {t("home.savedToProfile")}
-              </span>
-            </div>
+      <HomeSkillMatrixPreview analysisProfile={analysisProfile} onNavigate={onNavigate} />
 
-            <UsernameField
-              username={username}
-              onUsernameChange={setUsername}
-              onConnect={onConnect}
-              isConnecting={isConnecting}
-              connectError={connectError}
-              connectSuccess={connectSuccess}
-              buttonLabel={t("home.updateUsername")}
-            />
-          </div>
+      <MissionControl onNavigate={onNavigate} hasSkillProfile={hasSkillProfile} />
 
-          <div className="flex items-center gap-4">
-            {playerProfile.avatar ? (
-              <img
-                src={playerProfile.avatar}
-                alt={`${playerProfile.username} avatar`}
-                className="h-16 w-16 shrink-0 rounded-2xl object-cover"
-              />
-            ) : (
-              <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-purple-300 to-fuchsia-400 text-xl font-bold text-slate-950">
-                {profileInitial(playerProfile.username)}
-              </div>
-            )}
-            <div className="min-w-0">
-              <p className="truncate text-xl font-semibold text-white">
-                {playerProfile.username || t("common.na")}
-              </p>
-              <p className="mt-1 text-sm text-purple-300">
-                {playerProfile.status || t("common.na")}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-3">
-            {[
-              [t("home.country"), getCountryDisplay(playerProfile.country)],
-              [t("home.joined"), formatUnixDate(playerProfile.joined)],
-              [t("home.lastOnline"), formatUnixDate(playerProfile.last_online)],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-xl border border-white/10 bg-slate-950/50 p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
-                  {label}
-                </p>
-                <p className="mt-2 break-words text-sm font-medium text-slate-200">
-                  {value}
-                </p>
-              </div>
-            ))}
-          </div>
-        </DashboardCard>
-
-        <DashboardCard className="p-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-semibold text-white">{t("home.ratings")}</h2>
-              <p className="mt-1 text-sm text-slate-500">{t("home.ratingsDescription")}</p>
-            </div>
-            <span className="rounded-full border border-purple-500/25 bg-purple-500/10 px-3 py-1 text-xs font-medium text-purple-300">
-              {t("home.liveStats")}
-            </span>
-          </div>
-
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            {ratings.map((rating) => (
-              <RatingCard
-                key={rating.label}
-                label={rating.label}
-                current={rating.current ?? t("common.na")}
-                best={rating.best ?? t("common.na")}
-                games={getRatingGames(rating.record)}
-              />
-            ))}
-          </div>
-        </DashboardCard>
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-[1.25fr_1fr]">
-        <DashboardCard className="p-6">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-lg font-semibold text-white">{t("home.statsOverview")}</h2>
-            <span className="text-xs text-slate-500">{t("home.chessRecords")}</span>
-          </div>
-
-          <div className="mt-5 grid gap-3 sm:grid-cols-5">
-            {stats.map((stat) => (
-              <div key={stat.label} className="rounded-xl bg-slate-950/50 p-4">
-                <p className="text-xs text-slate-500">{stat.label}</p>
-                <p className="mt-2 text-xl font-semibold text-white">{stat.value}</p>
-              </div>
-            ))}
-          </div>
-        </DashboardCard>
-
-        <DashboardCard className="p-6">
-          <h2 className="text-lg font-semibold text-white">{t("home.quickActions")}</h2>
-          <div className="mt-5 grid gap-3">
-            {quickActions.map((action) => (
-              <button
-                key={action.key}
-                type="button"
-                className="rounded-xl border border-white/10 bg-slate-950/50 px-4 py-3 text-left text-sm font-medium text-slate-300 transition duration-200 hover:border-purple-500/40 hover:bg-purple-500/10 hover:text-purple-300"
-              >
-                {t(action.key, action.label)}
-              </button>
-            ))}
-          </div>
-        </DashboardCard>
-      </div>
-
-      <DashboardCard className="p-6">
-        <h2 className="text-lg font-semibold text-white">{t("home.trainingFocus")}</h2>
-        <div className="mt-5 grid gap-3 md:grid-cols-3">
-          {trainingFocus.map((item) => (
-            <div
-              key={item.title}
-              className="rounded-xl border border-white/10 bg-slate-950/40 p-4 transition duration-200 hover:border-purple-500/30 hover:bg-purple-500/10"
-            >
-              <p className="font-medium text-white">{t(item.titleKey, item.title)}</p>
-              <p className="mt-1 text-sm leading-6 text-slate-400">
-                {t(item.descriptionKey, item.description)}
-              </p>
-            </div>
-          ))}
-        </div>
-      </DashboardCard>
+      <RecentFlightLog
+        recentGames={recentGames}
+        onNavigate={onNavigate}
+        onReviewGame={onReviewGame}
+      />
     </section>
   );
 }

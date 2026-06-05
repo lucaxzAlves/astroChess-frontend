@@ -10,24 +10,38 @@ export default function PlayerCollectionCard({ player, gameCount, selected, onSe
       className={[
         "group overflow-hidden rounded-[28px] border p-5 text-left transition-all duration-300",
         selected
-          ? "border-purple-300/45 bg-gradient-to-br from-purple-500/[0.12] via-slate-950/70 to-cyan-300/[0.05] shadow-[0_0_28px_rgba(168,85,247,0.13)]"
-          : "border-purple-300/[0.16] bg-gradient-to-b from-white/[0.045] to-slate-950/50 hover:-translate-y-0.5 hover:border-purple-300/38 hover:bg-purple-300/[0.055] hover:shadow-[0_18px_46px_rgba(88,28,135,0.14)]",
+          ? "border-purple-300/45 bg-[linear-gradient(180deg,rgba(20,20,32,0.9),rgba(10,10,18,0.96))] shadow-[0_0_28px_rgba(168,85,247,0.13)]"
+          : "border-purple-300/[0.16] bg-[linear-gradient(180deg,rgba(20,20,32,0.86),rgba(10,10,18,0.94))] hover:-translate-y-0.5 hover:border-purple-300/38 hover:shadow-[0_18px_46px_rgba(88,28,135,0.14)]",
       ].join(" ")}
     >
       <div className="relative grid h-24 place-items-center overflow-hidden rounded-2xl border border-white/10 bg-slate-950/55">
         <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-purple-300/70 to-transparent" />
         <div
           className={[
-            "absolute -right-6 -top-8 h-24 w-24 rounded-full bg-gradient-to-br opacity-25 blur-2xl transition group-hover:opacity-40",
+            "absolute -right-6 -top-8 h-24 w-24 rounded-full bg-gradient-to-br opacity-18 blur-2xl transition group-hover:opacity-30",
             player.gradient,
           ].join(" ")}
         />
         <div
           className={[
-            "grid h-16 w-16 place-items-center rounded-full border border-white/15 bg-gradient-to-br text-2xl font-semibold text-white shadow-[0_18px_40px_rgba(0,0,0,0.25)]",
-            player.gradient,
+            "absolute bottom-0 left-5 right-5 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent opacity-70",
+            selected ? "via-purple-200/80" : "",
+          ].join(" ")}
+        />
+        <div
+          className={[
+            "relative grid h-16 w-16 place-items-center rounded-full border text-2xl font-semibold text-white shadow-[0_18px_40px_rgba(0,0,0,0.25)]",
+            selected
+              ? "border-purple-200/35 bg-purple-300/[0.12]"
+              : "border-white/15 bg-white/[0.055] group-hover:border-purple-200/25",
           ].join(" ")}
         >
+          <span
+            className={[
+              "absolute -right-1 -top-1 h-4 w-4 rounded-full bg-gradient-to-br opacity-80 shadow-[0_0_18px_rgba(168,85,247,0.45)]",
+              player.gradient,
+            ].join(" ")}
+          />
           {player.name.slice(0, 2).toUpperCase()}
         </div>
       </div>

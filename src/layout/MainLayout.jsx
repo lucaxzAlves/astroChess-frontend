@@ -5,10 +5,15 @@ export default function MainLayout({
   onActiveItemChange,
   children,
   fullBleed = false,
+  chessComAvatar = "",
 }) {
   return (
     <div className="flex min-h-screen bg-[var(--astro-bg)] text-slate-100">
-      <Sidebar activeItem={activeItem} onActiveItemChange={onActiveItemChange} />
+      <Sidebar
+        activeItem={activeItem}
+        onActiveItemChange={onActiveItemChange}
+        chessComAvatar={chessComAvatar}
+      />
 
       <main
         className={[
@@ -18,7 +23,13 @@ export default function MainLayout({
             : "overflow-y-auto p-4 sm:p-6 xl:p-8",
         ].join(" ")}
       >
-        <div className={fullBleed ? "astro-page-content min-h-screen" : "astro-page-content"}>
+        <div
+          key={fullBleed ? "full-bleed-view" : activeItem}
+          className={[
+            fullBleed ? "astro-page-content min-h-screen" : "astro-page-content",
+            fullBleed ? "" : "astro-page-transition",
+          ].join(" ")}
+        >
           {children}
         </div>
       </main>

@@ -11,10 +11,15 @@ export async function startGeneralAnalysis({ userId, games, options }) {
   });
 }
 
-export async function getAnalyzedGameIds({ source = "chess.com" } = {}) {
-  const params = source ? `?source=${encodeURIComponent(source)}` : "";
+export async function getAnalyzedGameIds({ source = "chess.com", scope = "batch" } = {}) {
+  const params = new URLSearchParams();
 
-  return apiClient(`/analysis/batch/analyzed-game-ids${params}`, {
+  if (source) params.set("source", source);
+  if (scope) params.set("scope", scope);
+
+  const queryString = params.toString();
+
+  return apiClient(`/analysis/batch/analyzed-game-ids${queryString ? `?${queryString}` : ""}`, {
     method: "GET",
     auth: true,
   });

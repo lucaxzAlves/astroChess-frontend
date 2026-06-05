@@ -17,6 +17,10 @@ export function getGameAnalysisId(game) {
   return String(game?.uuid || game?.url || "").trim();
 }
 
+function buildGameIdSet(gameIds = []) {
+  return new Set((gameIds || []).map((id) => String(id || "").trim()).filter(Boolean));
+}
+
 function getPlayerColor(game, username) {
   const normalizedUsername = getNormalizedUsername(username);
   const whiteUsername = getNormalizedUsername(game?.white?.username);
@@ -168,7 +172,7 @@ export function filterGamesForGeneralAnalysis(
   excludedGameIds = []
 ) {
   const normalizedUsername = getNormalizedUsername(connectedUsername);
-  const excludedGameIdSet = new Set((excludedGameIds || []).map((id) => String(id).trim()).filter(Boolean));
+  const excludedGameIdSet = buildGameIdSet(excludedGameIds);
 
   if (!normalizedUsername) return [];
 
@@ -240,10 +244,10 @@ export function buildSelectionPreview({
     filters,
     []
   );
-  const selectedGameIds = new Set(selectedGames.map(getGameAnalysisId).filter(Boolean));
+  const excludedGameIdSet = buildGameIdSet(excludedGameIds);
   const excludedMatchingGamesCount = matchingGamesBeforeExclusions.filter((game) => {
     const gameId = getGameAnalysisId(game);
-    return gameId && !selectedGameIds.has(gameId);
+    return gameId && excludedGameIdSet.has(gameId);
   }).length;
   const selectedGamesCount =
     selectedGames.length > 0

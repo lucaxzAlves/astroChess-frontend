@@ -890,7 +890,7 @@ export default function AICoach({
     setAnalyzedGameIdsError("");
 
     try {
-      const response = await getAnalyzedGameIds({ source: "chess.com" });
+      const response = await getAnalyzedGameIds({ source: "chess.com", scope: "batch" });
       const ids = Array.isArray(response?.gameIds)
         ? response.gameIds
         : Array.isArray(response?.items)
@@ -1676,6 +1676,7 @@ export default function AICoach({
         submissionState={analysisFlow.state}
         submissionMessage={analysisFlow.message}
         submissionError={analysisFlow.state === "failed" ? analysisFlow.error : ""}
+        submissionBatchId={analysisFlow.batchId}
         onConfirm={handleAnalysisConfirm}
       />
     </>

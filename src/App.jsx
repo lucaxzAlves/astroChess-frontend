@@ -10,6 +10,7 @@ import Games from "./pages/Games.jsx";
 import Home from "./pages/Home.jsx";
 import LoginPage from "./pages/LoginPage";
 import MasterReplayAdmin from "./pages/MasterReplayAdmin.jsx";
+import OpeningsPage from "./pages/OpeningsPage.jsx";
 import Practice from "./pages/Practice.jsx";
 import {
   extractPlayerProfile,
@@ -34,6 +35,7 @@ const MIN_GAMES_PER_LOAD = 20;
 const pages = {
   Home,
   Games,
+  Openings: OpeningsPage,
   Analysis,
   Practice,
   "Academy Admin": AcademyAdmin,
@@ -45,6 +47,7 @@ const pages = {
 const itemToPath = {
   Home: "/",
   Games: "/games",
+  Openings: "/openings",
   Analysis: "/analysis",
   Practice: "/practice",
   "Academy Admin": "/academy-admin",
@@ -55,6 +58,7 @@ const itemToPath = {
 
 function pathToItem(pathname) {
   if (pathname === "/games") return "Games";
+  if (pathname === "/openings") return "Openings";
   if (pathname === "/analysis") return "Analysis";
   if (pathname === "/practice") return "Practice";
   if (pathname === "/academy-admin") return "Academy Admin";
@@ -411,13 +415,16 @@ export default function App() {
 
       try {
         let archives = playerArchives;
-        let mergedGames = [];
-        let nextLoadedCount = 0;
+        let mergedGames = [...playerGames].sort(
+          (a, b) => (b.end_time || 0) - (a.end_time || 0)
+        );
+        let nextLoadedCount = Math.min(loadedArchivesCount, archives.length || loadedArchivesCount);
 
         if (archives.length === 0) {
           const archivesData = await getPlayerArchives(connectedUsername);
           archives = [...(archivesData.archives || [])].reverse();
           setPlayerArchives(archives);
+          nextLoadedCount = Math.min(loadedArchivesCount, archives.length);
         }
 
         if (archives.length === 0) {
@@ -557,10 +564,14 @@ export default function App() {
           connectedUsername={connectedUsername}
           playerProfile={playerProfile}
           parsedStats={parsedStats}
+          analysisProfile={normalizedAnalysisProfile}
+          playerGames={playerGames}
           isConnecting={isConnecting}
           connectError={connectError}
           connectSuccess={connectSuccess}
           onConnect={connectChessComAccount}
+          onNavigate={handleActiveItemChange}
+          onReviewGame={handleReviewGame}
           initialUsername={savedChessUsername || connectedUsername}
         />
       );
@@ -594,6 +605,10 @@ export default function App() {
           onOpenCoach={() => handleActiveItemChange("AI Coach")}
         />
       );
+    }
+
+    if (activeItem === "Openings") {
+      return <OpeningsPage onOpenAnalysis={() => handleActiveItemChange("Analysis")} />;
     }
 
     if (activeItem === "AI Coach") {
@@ -635,6 +650,7 @@ export default function App() {
       activeItem={activeItem}
       onActiveItemChange={handleActiveItemChange}
       fullBleed={isReviewRoute}
+      chessComAvatar={playerProfile?.avatar || ""}
     >
       {renderMainPage()}
     </MainLayout>

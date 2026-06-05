@@ -234,16 +234,16 @@ export default function Analysis({
 
       <SkillMapCard skillMap={profileData?.skillMap} timeRange="Perfil mais recente" />
 
+      <PriorityAreasSection
+        recommendations={profileData?.recommendations}
+        skillMap={profileData?.skillMap}
+      />
+
       <ChessStatsCard chessStats={profileData?.chessStats} />
 
       <GrowthBlockersSection
         growthBlockers={profileData?.growthBlockers ?? []}
         recurringMistakes={profileData?.recurringMistakes ?? []}
-      />
-
-      <PriorityAreasSection
-        recommendations={profileData?.recommendations}
-        skillMap={profileData?.skillMap}
       />
 
       <PlayingStyleCard playingStyle={profileData?.playingStyle} />
