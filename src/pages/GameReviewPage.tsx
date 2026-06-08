@@ -1,15 +1,20 @@
 import { Chess } from "chess.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import EvaluationBar from "../components/review/EvaluationBar";
+import CoachAIReview from "../components/review/CoachAIReview";
+import MoveQualityIcon from "../components/review/MoveQualityIcon";
 import MoveControls from "../components/review/MoveControls";
 import ReviewBoard from "../components/review/ReviewBoard";
+import ReviewMoveList from "../components/review/ReviewMoveList";
 import ReviewPanel from "../components/review/ReviewPanel";
 import ReviewPlayerBar from "../components/review/ReviewPlayerBar";
+import ReviewSummary from "../components/review/ReviewSummary";
 import type { ReviewMove, ReviewMoveRow } from "../components/review/ReviewMoveList";
 import {
   analyzePgnGame,
   normalizeGameAnalysisResponse,
 } from "../services/analysisApi";
+import { getClassificationMeta } from "../utils/reviewClassification";
 import { getUserFriendlyError } from "../utils/userFriendlyErrors";
 import {
   buildVariationFromPv,
@@ -57,6 +62,7 @@ type GameReviewPageProps = {
 
 type AnalysisResult = ReturnType<typeof normalizeGameAnalysisResponse>;
 type ReviewMode = "mainline" | "backendVariation" | "freeAnalysis";
+type MobileReviewTab = "analysis" | "moves" | "coach" | "info";
 
 const fallbackPgn = "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5";
 
@@ -114,6 +120,59 @@ function buildMoveRows(
   });
 }
 
+function useMobileReviewLayout() {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const query = window.matchMedia("(max-width: 767px)");
+    const sync = () => setIsMobile(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
+  return isMobile;
+}
+
+function CurrentMoveSpotlight({
+  currentMoveLabel,
+}: {
+  currentMoveLabel?: {
+    san: string;
+    classification?: string | null;
+    moveNumber?: number | null;
+    color?: "white" | "black" | null;
+  } | null;
+}) {
+  if (!currentMoveLabel?.san || !currentMoveLabel.classification) return null;
+
+  const meta = getClassificationMeta(currentMoveLabel.classification);
+  const prefix =
+    currentMoveLabel.moveNumber && currentMoveLabel.color
+      ? `${currentMoveLabel.moveNumber}${currentMoveLabel.color === "black" ? "..." : "."}`
+      : "";
+
+  return (
+    <section className="game-review-current-move-card">
+      <span className="game-review-current-move-label">Lance atual</span>
+      <div className="game-review-current-move-row">
+        <strong>
+          {prefix} {currentMoveLabel.san}
+        </strong>
+        <span className={`game-review-classification-badge ${meta.cssClass}`}>
+          <MoveQualityIcon classification={currentMoveLabel.classification} />
+          {meta.label}
+        </span>
+      </div>
+    </section>
+  );
+}
+
 export default function GameReviewPage({
   gameId,
   pgn,
@@ -153,6 +212,7 @@ export default function GameReviewPage({
   const [analysisError, setAnalysisError] = useState("");
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [mobileReviewTab, setMobileReviewTab] = useState<MobileReviewTab>("analysis");
   const [freeLineStartFen, setFreeLineStartFen] = useState(replayData.startingFen);
   const [freeLineMoves, setFreeLineMoves] = useState<string[]>([]);
   const [freeLineFens, setFreeLineFens] = useState<string[]>([replayData.startingFen]);
@@ -162,6 +222,7 @@ export default function GameReviewPage({
   const lastBrilliantAnimationPlyRef = useRef<number | null>(null);
   const [brilliantMeteorTargetSquare, setBrilliantMeteorTargetSquare] = useState<string | null>(null);
   const [brilliantMeteorTriggerKey, setBrilliantMeteorTriggerKey] = useState<string | number | null>(null);
+  const isMobileReview = useMobileReviewLayout();
 
   const playMoveSound = () => {
     if (!soundEnabled || typeof window === "undefined") return;
@@ -678,6 +739,358 @@ export default function GameReviewPage({
     setBrilliantMeteorTriggerKey(`test-${currentMoveIndex}-${Date.now()}`);
   };
 
+  const currentMoveLabel: {
+    san: string;
+    classification?: string | null;
+    moveNumber?: number | null;
+    color?: "white" | "black" | null;
+  } | null =
+    reviewMode === "mainline" && currentAnalyzedMove
+      ? {
+          san: currentAnalyzedMove.san,
+          classification: currentAnalyzedMove.classification,
+          moveNumber: currentAnalyzedMove.moveNumber,
+          color:
+            currentAnalyzedMove.color === "white" || currentAnalyzedMove.color === "black"
+              ? currentAnalyzedMove.color
+              : null,
+        }
+      : null;
+
+  const navigatePrevious = () => {
+    if (reviewMode === "backendVariation") {
+      goToVariationPly(variationPly - 1);
+      return;
+    }
+
+    if (reviewMode === "freeAnalysis") {
+      goToFreeLinePly(freeLinePly - 1);
+      return;
+    }
+
+    goToMainlinePly(currentMoveIndex - 1);
+  };
+
+  const navigateNext = () => {
+    if (reviewMode === "backendVariation" && activeVariation) {
+      goToVariationPly(variationPly + 1);
+      return;
+    }
+
+    if (reviewMode === "freeAnalysis") {
+      goToFreeLinePly(freeLinePly + 1);
+      return;
+    }
+
+    goToMainlinePly(currentMoveIndex + 1);
+  };
+
+  const navigateFirst = () => {
+    if (reviewMode === "backendVariation") {
+      goToVariationPly(0);
+      return;
+    }
+
+    if (reviewMode === "freeAnalysis") {
+      goToFreeLinePly(0);
+      return;
+    }
+
+    goToMainlinePly(0);
+  };
+
+  const navigateLast = () => {
+    if (reviewMode === "backendVariation" && activeVariation) {
+      goToVariationPly(activeVariation.positions.length - 1);
+      return;
+    }
+
+    if (reviewMode === "freeAnalysis") {
+      goToFreeLinePly(freeLineFens.length - 1);
+      return;
+    }
+
+    goToMainlinePly(replayData.builtMoves.length);
+  };
+
+  const renderReviewBoard = (mobile = false) => (
+    <ReviewBoard
+      fen={currentFen}
+      orientation={orientation}
+      onMove={handleMove}
+      highlightedSquare={boardHighlight.square}
+      highlightedClassification={boardHighlight.classification}
+      neutralHighlightedSquare={boardHighlight.neutralSquare}
+      brilliantEffectTargetSquare={brilliantMeteorTargetSquare}
+      brilliantEffectTriggerKey={brilliantMeteorTriggerKey}
+      soundEnabled={soundEnabled}
+      maxBoardWidth={mobile ? 720 : undefined}
+      shellMaxWidth={mobile ? 720 : undefined}
+      viewportHeightRatio={mobile ? 0.58 : undefined}
+    />
+  );
+
+  if (isMobileReview) {
+    const mobileTabs: Array<[MobileReviewTab, string]> = [
+      ["analysis", "Análise"],
+      ["moves", "Lances"],
+      ["coach", "Coach"],
+      ["info", "Info"],
+    ];
+
+    return (
+      <div className="game-review-page game-review-mobile-page">
+        <section className="game-review-mobile-board-card">
+          <ReviewPlayerBar
+            name={boardPlayerBars.top.name}
+            rating={boardPlayerBars.top.rating}
+            color={boardPlayerBars.top.color}
+          />
+
+          <div className="game-review-mobile-eval">
+            <EvaluationBar evaluation={currentEvaluation} labelOverride={evalLabelOverride} variant="horizontal" />
+          </div>
+
+          {renderReviewBoard(true)}
+
+          <ReviewPlayerBar
+            name={boardPlayerBars.bottom.name}
+            rating={boardPlayerBars.bottom.rating}
+            color={boardPlayerBars.bottom.color}
+          />
+
+          <div className="game-review-mobile-status-row">
+            <span className="game-review-mode-badge">{boardStatus}</span>
+            {reviewMode === "backendVariation" ? (
+              <button type="button" className="game-review-mode-button" onClick={backToMainLine}>
+                Linha principal
+              </button>
+            ) : null}
+            {reviewMode === "freeAnalysis" ? (
+              <>
+                <button type="button" className="game-review-mode-button" onClick={clearFreeLine}>
+                  Limpar linha
+                </button>
+                <button type="button" className="game-review-mode-button" onClick={backToMainLine}>
+                  Linha principal
+                </button>
+              </>
+            ) : null}
+          </div>
+
+          <div className="game-review-mobile-controls" aria-label="Controles da partida">
+            <button type="button" onClick={navigateFirst} aria-label="Primeiro lance">
+              |‹
+            </button>
+            <button type="button" onClick={navigatePrevious} aria-label="Lance anterior">
+              ‹
+            </button>
+            <button type="button" onClick={navigateNext} aria-label="Próximo lance">
+              ›
+            </button>
+            <button type="button" onClick={navigateLast} aria-label="Último lance">
+              ›|
+            </button>
+            <button type="button" onClick={() => setOrientation((prev) => (prev === "white" ? "black" : "white"))}>
+              Virar
+            </button>
+          </div>
+        </section>
+
+        <section className="game-review-mobile-panel">
+          <div className="game-review-mobile-panel-head">
+            <div>
+              <p className="game-review-mobile-eyebrow">Game Review</p>
+              <h2>Revisão da partida</h2>
+            </div>
+            {!hasAnalysis && !isAnalyzing ? (
+              <button type="button" className="game-review-start-button" onClick={handleStartReview}>
+                Iniciar
+              </button>
+            ) : null}
+          </div>
+
+          <div className="game-review-mobile-tabs" role="tablist" aria-label="Seções da review">
+            {mobileTabs.map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={mobileReviewTab === key}
+                onClick={() => setMobileReviewTab(key)}
+                className={mobileReviewTab === key ? "active" : ""}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div className="game-review-mobile-tab-content">
+            {isAnalyzing ? (
+              <section className="game-review-loading-card">
+                <div className="game-review-loading-spinner" />
+                <div className="game-review-loading-copy">
+                  <h3>Analisando partida...</h3>
+                  <p>O AstroChess está classificando lances e extraindo os momentos críticos.</p>
+                </div>
+                <div className="game-review-loading-bar">
+                  <span />
+                </div>
+              </section>
+            ) : null}
+
+            {analysisError ? (
+              <section className="game-review-error-card">
+                <h3>Análise indisponível</h3>
+                <p>{analysisError}</p>
+              </section>
+            ) : null}
+
+            {mobileReviewTab === "analysis" ? (
+              <div className="game-review-mobile-stack">
+                {hasAnalysis && analysisResult?.reviewSummary ? (
+                  <>
+                    <CurrentMoveSpotlight currentMoveLabel={currentMoveLabel} />
+                    <ReviewSummary summary={analysisResult.reviewSummary} />
+                    <details className="game-review-mobile-details" open>
+                      <summary>Momentos e lições</summary>
+                      <CoachAIReview
+                        aiReview={analysisResult.aiReview || null}
+                        hasAnalysis={hasAnalysis}
+                        analyzedMoves={analysisResult.analyzedMoves || []}
+                        onNavigateToPly={goToMainlinePly}
+                      />
+                    </details>
+                  </>
+                ) : (
+                  <section className="game-review-empty-card">
+                    <h3>Nenhuma revisão ainda</h3>
+                    <p>Inicie a revisão para ver resumo, viradas críticas e lições da partida.</p>
+                  </section>
+                )}
+              </div>
+            ) : null}
+
+            {mobileReviewTab === "moves" ? (
+              <div className="game-review-mobile-stack">
+                {hasAnalysis ? (
+                  <>
+                    <ReviewMoveList
+                      moveRows={moveRows}
+                      currentMoveIndex={currentMoveIndex}
+                      onSelectMove={goToMainlinePly}
+                      onStartVariation={handleStartVariation}
+                      reviewMode={reviewMode}
+                      activeVariationPly={activeVariation?.sourcePly || null}
+                      freeLineMoves={freeLineMoves}
+                    />
+                    <section className="game-review-card">
+                      <p className="game-review-card-title">Classificações</p>
+                      <div className="game-review-pills">
+                        {[
+                          "brilliant",
+                          "excellent",
+                          "best",
+                          "great",
+                          "good",
+                          "book",
+                          "inaccuracy",
+                          "mistake",
+                          "missedChance",
+                          "blunder",
+                        ].map((classification) => {
+                          const meta = getClassificationMeta(classification);
+
+                          return (
+                            <span
+                              key={classification}
+                              className={`game-review-classification-badge ${meta.cssClass}`}
+                            >
+                              <MoveQualityIcon classification={classification} />
+                              {meta.label}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  </>
+                ) : (
+                  <section className="game-review-empty-card">
+                    <h3>Lances ainda não classificados</h3>
+                    <p>Rode a revisão para navegar pela notação com qualidade dos lances.</p>
+                  </section>
+                )}
+              </div>
+            ) : null}
+
+            {mobileReviewTab === "coach" ? (
+              <CoachAIReview
+                aiReview={analysisResult?.aiReview || null}
+                hasAnalysis={hasAnalysis}
+                analyzedMoves={analysisResult?.analyzedMoves || []}
+                onNavigateToPly={goToMainlinePly}
+              />
+            ) : null}
+
+            {mobileReviewTab === "info" ? (
+              <div className="game-review-mobile-stack">
+                <section className="game-review-card">
+                  <p className="game-review-card-title">Jogadores</p>
+                  <div className="game-review-detail-list">
+                    <div className="game-review-detail-row">
+                      <span className="game-review-label">Brancas</span>
+                      <span className="game-review-value">
+                        {playersData.white.username} · {playersData.white.rating}
+                      </span>
+                    </div>
+                    <div className="game-review-detail-row">
+                      <span className="game-review-label">Pretas</span>
+                      <span className="game-review-value">
+                        {playersData.black.username} · {playersData.black.rating}
+                      </span>
+                    </div>
+                  </div>
+                </section>
+                <section className="game-review-card">
+                  <p className="game-review-card-title">Detalhes da partida</p>
+                  <div className="game-review-detail-list">
+                    {[
+                      ["Resultado", gameInfo.result],
+                      ["Ritmo", gameInfo.timeControl],
+                      ["Data", gameInfo.date],
+                      ["Abertura", gameInfo.opening],
+                      ["Ranqueada", gameInfo.rated],
+                    ].map(([label, value]) => (
+                      <div key={label} className="game-review-detail-row">
+                        <span className="game-review-label">{label}</span>
+                        <span className="game-review-value">{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+                <button
+                  type="button"
+                  className="game-review-action-btn secondary"
+                  onClick={() => setSoundEnabled((prev) => !prev)}
+                >
+                  {soundEnabled ? "Desligar som" : "Ligar som"}
+                </button>
+                <button
+                  type="button"
+                  className="game-review-action-btn secondary brilliant-test-button"
+                  onClick={triggerMeteorTest}
+                  disabled={!latestMoveTargetSquare}
+                >
+                  Testar meteoro
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </section>
+      </div>
+    );
+  };
+
   return (
     <div className="game-review-page">
       <div className="game-review-layout">
@@ -799,16 +1212,7 @@ export default function GameReviewPage({
           isAnalyzing={isAnalyzing}
           analysisError={analysisError}
           onStartReview={handleStartReview}
-          currentMoveLabel={
-            reviewMode === "mainline" && currentAnalyzedMove
-              ? {
-                  san: currentAnalyzedMove.san,
-                  classification: currentAnalyzedMove.classification,
-                  moveNumber: currentAnalyzedMove.moveNumber,
-                  color: currentAnalyzedMove.color,
-                }
-              : null
-          }
+          currentMoveLabel={currentMoveLabel}
         />
       </div>
     </div>

@@ -90,6 +90,8 @@ const navigationItems = [
   },
 ];
 
+export const mainNavigationItems = navigationItems;
+
 function Icon({ children }) {
   return (
     <svg
@@ -115,7 +117,18 @@ function getUserEmail(user) {
   return user.email || "";
 }
 
-export default function Sidebar({ activeItem, onActiveItemChange, chessComAvatar = "" }) {
+export function SidebarIcon({ children, className = "" }) {
+  return <Icon>{children}</Icon>;
+}
+
+export default function Sidebar({
+  activeItem,
+  onActiveItemChange,
+  chessComAvatar = "",
+  collapsed = false,
+  collapsible = false,
+  onToggleCollapsed,
+}) {
   const { user, isAuthenticated, logout } = useAuth();
   const { language, setLanguage, supportedLanguages, t } = useLanguage();
 
@@ -135,20 +148,46 @@ export default function Sidebar({ activeItem, onActiveItemChange, chessComAvatar
   const userInitial = String(userName).charAt(0).toUpperCase() || "U";
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-72 shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-purple-500/20 bg-[linear-gradient(180deg,#070711,#0d0b18_48%,#060610)] px-3 py-4 text-slate-300 shadow-xl shadow-black/30 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <div className="relative z-10 mb-6 flex items-center gap-3 px-2">
+    <aside
+      className={[
+        "fixed left-0 top-0 z-40 hidden h-screen shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-purple-500/20 bg-[linear-gradient(180deg,#070711,#0d0b18_48%,#060610)] py-4 text-slate-300 shadow-xl shadow-black/30 transition-[width,padding] duration-300 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:flex",
+        collapsed ? "w-20 px-2" : "w-72 px-3",
+      ].join(" ")}
+    >
+      <div
+        className={[
+          "relative z-10 mb-6 flex items-center gap-3 px-2",
+          collapsed ? "justify-center" : "",
+        ].join(" ")}
+      >
         <img
           src={brandLogoSrc}
           alt="astroChess logo"
-          className="h-14 w-14 shrink-0 object-contain"
+          className={collapsed ? "h-12 w-12 shrink-0 object-contain" : "h-14 w-14 shrink-0 object-contain"}
         />
 
-        <div className="min-w-0">
+        <div className={collapsed ? "sr-only" : "min-w-0"}>
           <p className="bg-gradient-to-r from-white via-purple-200 to-cyan-200 bg-clip-text text-base font-semibold uppercase tracking-[0.18em] text-transparent">
             astroChess
           </p>
           <p className="text-xs text-slate-500">{t("sidebar.tagline")}</p>
         </div>
+
+        {collapsible ? (
+          <button
+            type="button"
+            onClick={onToggleCollapsed}
+            className={[
+              "grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-purple-300/20 bg-white/[0.04] text-slate-300 transition hover:border-purple-300/45 hover:text-white",
+              collapsed ? "absolute -right-4 top-2" : "ml-auto",
+            ].join(" ")}
+            aria-label={collapsed ? "Expandir navegação" : "Recolher navegação"}
+          >
+            <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d={collapsed ? "m9 6 6 6-6 6" : "m15 6-6 6 6 6"} />
+            </svg>
+          </button>
+        ) : null}
       </div>
 
       <nav className="relative z-10 flex flex-1 flex-col gap-1">
@@ -161,18 +200,21 @@ export default function Sidebar({ activeItem, onActiveItemChange, chessComAvatar
               type="button"
               onClick={() => onActiveItemChange(item.label)}
               className={[
-                "group relative flex w-full items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                "group relative flex w-full items-center rounded-lg border border-transparent text-sm font-medium transition-all duration-200",
+                collapsed ? "justify-center px-2 py-3" : "gap-3 px-3 py-2.5",
                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#080a0e]",
                 isActive
                   ? "border-purple-400/40 bg-[linear-gradient(135deg,rgba(124,58,237,0.20),rgba(34,211,238,0.06))] text-purple-100 shadow-inner shadow-purple-950/20"
                   : "text-slate-400 hover:border-purple-500/20 hover:bg-purple-500/10 hover:text-purple-200",
               ].join(" ")}
               aria-current={isActive ? "page" : undefined}
+              aria-label={t(item.translationKey, item.label)}
+              title={collapsed ? t(item.translationKey, item.label) : undefined}
             >
               {isActive && (
                 <span className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-full bg-purple-400 shadow-[0_0_12px_rgba(192,132,252,0.8)]" />
               )}
-              {isActive && (
+              {isActive && !collapsed && (
                 <span className="absolute right-3 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-cyan-200" />
               )}
 
@@ -187,17 +229,23 @@ export default function Sidebar({ activeItem, onActiveItemChange, chessComAvatar
                 <Icon>{item.icon}</Icon>
               </span>
 
-              <span className="flex-1 text-left">{t(item.translationKey, item.label)}</span>
+              <span className={collapsed ? "sr-only" : "flex-1 text-left"}>{t(item.translationKey, item.label)}</span>
 
-              {isActive && (
+              {isActive && !collapsed && (
                 <span className="h-1.5 w-1.5 rounded-full bg-purple-400 shadow-[0_0_12px_rgba(192,132,252,0.8)]" />
               )}
+
+              {collapsed ? (
+                <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-3 -translate-y-1/2 rounded-lg border border-purple-300/20 bg-[#090914] px-3 py-2 text-xs font-semibold text-slate-100 opacity-0 shadow-xl shadow-black/30 transition group-hover:opacity-100 group-focus-visible:opacity-100">
+                  {t(item.translationKey, item.label)}
+                </span>
+              ) : null}
             </button>
           );
         })}
       </nav>
 
-      <div className="relative z-10 mt-4 rounded-xl border border-purple-500/20 bg-white/[0.04] p-2.5">
+      <div className={collapsed ? "hidden" : "relative z-10 mt-4 rounded-xl border border-purple-500/20 bg-white/[0.04] p-2.5"}>
         <label className="grid gap-2 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
           {t("language.label")}
           <select
@@ -215,7 +263,25 @@ export default function Sidebar({ activeItem, onActiveItemChange, chessComAvatar
       </div>
 
       {isAuthenticated ? (
-        <div className="relative z-10 mt-4 rounded-xl border border-purple-500/20 bg-white/[0.04] p-2.5">
+        <div className={collapsed ? "relative z-10 mt-4 grid place-items-center" : "relative z-10 mt-4 rounded-xl border border-purple-500/20 bg-white/[0.04] p-2.5"}>
+          {collapsed ? (
+            chessComAvatar ? (
+              <img
+                src={chessComAvatar}
+                alt=""
+                className="h-10 w-10 rounded-full border border-purple-300/30 object-cover shadow-[0_0_18px_rgba(168,85,247,0.18)]"
+                title={userName}
+              />
+            ) : (
+              <div
+                className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-purple-300 to-fuchsia-400 text-sm font-bold text-slate-950"
+                title={userName}
+              >
+                {userInitial}
+              </div>
+            )
+          ) : (
+            <>
           <div className="flex items-center gap-3">
             {chessComAvatar ? (
               <img
@@ -244,14 +310,27 @@ export default function Sidebar({ activeItem, onActiveItemChange, chessComAvatar
           >
             {t("sidebar.logout")}
           </button>
+            </>
+          )}
         </div>
       ) : (
         <button
           type="button"
           onClick={handleGoToLogin}
-          className="group relative z-10 mt-4 flex w-full items-center justify-center rounded-xl border border-purple-500/40 bg-purple-500/15 p-2.5 text-sm font-semibold text-purple-200 transition-all duration-200 hover:border-purple-400 hover:bg-purple-500/30 hover:text-white"
+          className={[
+            "group relative z-10 mt-4 flex w-full items-center justify-center rounded-xl border border-purple-500/40 bg-purple-500/15 p-2.5 text-sm font-semibold text-purple-200 transition-all duration-200 hover:border-purple-400 hover:bg-purple-500/30 hover:text-white",
+            collapsed ? "h-11" : "",
+          ].join(" ")}
+          aria-label={t("sidebar.login")}
+          title={collapsed ? t("sidebar.login") : undefined}
         >
-          {t("sidebar.login")}
+          {collapsed ? (
+            <Icon>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 3h4.5A1.5 1.5 0 0 1 21 4.5v15a1.5 1.5 0 0 1-1.5 1.5H15M10 17l5-5-5-5M15 12H3" />
+            </Icon>
+          ) : (
+            t("sidebar.login")
+          )}
         </button>
       )}
     </aside>

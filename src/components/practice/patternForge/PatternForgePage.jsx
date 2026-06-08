@@ -43,6 +43,7 @@ export default function PatternForgePage({
   const { t } = useLanguage();
   const [patternForgeCycle, setPatternForgeCycle] = useState(null);
   const [todaySession, setTodaySession] = useState(null);
+  const [calendarProgress, setCalendarProgress] = useState(null);
   const [puzzles, setPuzzles] = useState([]);
   const [themeReasons, setThemeReasons] = useState([]);
   const [hasConfiguredPatternForge, setHasConfiguredPatternForge] = useState(false);
@@ -63,6 +64,7 @@ export default function PatternForgePage({
     const cycle = payload?.cycle || null;
     setPatternForgeCycle(cycle);
     setTodaySession(payload?.todaySession || null);
+    setCalendarProgress(payload?.calendarProgress || null);
     setPuzzles(Array.isArray(payload?.puzzles) ? payload.puzzles : []);
     setThemeReasons(Array.isArray(payload?.themeReasons) ? payload.themeReasons : []);
     setHasConfiguredPatternForge(Boolean(cycle));
@@ -77,6 +79,7 @@ export default function PatternForgePage({
       if (!username) {
         setPatternForgeCycle(null);
         setTodaySession(null);
+        setCalendarProgress(null);
         setPuzzles([]);
         setThemeReasons([]);
         setHasConfiguredPatternForge(false);
@@ -134,6 +137,7 @@ export default function PatternForgePage({
     setForgeConfig(defaultForgeConfig);
     setPatternForgeCycle(null);
     setTodaySession(null);
+    setCalendarProgress(null);
     setPuzzles([]);
     setThemeReasons([]);
     setCurrentSetupStep(0);
@@ -188,7 +192,7 @@ export default function PatternForgePage({
 
   if (!username) {
     return (
-      <section className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+      <section className="mx-auto flex w-full max-w-[460px] flex-col gap-6 md:max-w-7xl">
         <button
           type="button"
           onClick={onBackToPractice}
@@ -215,7 +219,7 @@ export default function PatternForgePage({
 
   if (cycleError && !isConfiguring && !hasConfiguredPatternForge) {
     return (
-      <section className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+      <section className="mx-auto flex w-full max-w-[460px] flex-col gap-6 md:max-w-7xl">
         <button
           type="button"
           onClick={onBackToPractice}
@@ -249,7 +253,7 @@ export default function PatternForgePage({
 
   if (hasConfiguredPatternForge && patternForgeCycle && puzzles.length === 0) {
     return (
-      <section className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+      <section className="mx-auto flex w-full max-w-[460px] flex-col gap-6 md:max-w-7xl">
         <button
           type="button"
           onClick={onBackToPractice}
@@ -272,6 +276,7 @@ export default function PatternForgePage({
       <PatternForgeTrainingBoard
         cycleDraft={patternForgeCycle}
         todaySession={todaySession}
+        calendarProgress={calendarProgress}
         puzzles={puzzles}
         themeReasons={themeReasons}
         onResetSetup={resetSetup}
@@ -285,7 +290,7 @@ export default function PatternForgePage({
   }
 
   return (
-    <section className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+    <section className="mx-auto flex w-full max-w-[460px] flex-col gap-6 md:max-w-7xl">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"

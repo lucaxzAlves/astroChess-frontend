@@ -143,7 +143,36 @@ function OverviewCard({ label, value, className = "", valueClassName = "" }) {
   );
 }
 
-function BoardNavigationControls({ canGoBack, canGoForward, onBack, onForward, onReset }) {
+function BoardNavigationControls({
+  canGoBack,
+  canGoForward,
+  onBack,
+  onForward,
+  onReset,
+  onFirst,
+  onLast,
+  mobile = false,
+}) {
+  if (mobile) {
+    const buttonClass = "min-h-12 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-slate-200 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40";
+    return (
+      <div className="mt-3 grid grid-cols-4 gap-2 rounded-[24px] border border-white/10 bg-slate-950/45 p-2.5">
+        <button type="button" onClick={onFirst || onReset} disabled={!canGoBack} className={buttonClass} aria-label="First move">
+          |‹
+        </button>
+        <button type="button" onClick={onBack} disabled={!canGoBack} className={buttonClass} aria-label="Previous move">
+          ‹
+        </button>
+        <button type="button" onClick={onForward} disabled={!canGoForward} className={`${buttonClass} border-cyan-300/24 bg-cyan-300/[0.08] text-cyan-100`} aria-label="Next move">
+          ›
+        </button>
+        <button type="button" onClick={onLast || onForward} disabled={!canGoForward} className={`${buttonClass} border-cyan-300/24 bg-cyan-300/[0.08] text-cyan-100`} aria-label="Last move">
+          ›|
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-4 flex flex-wrap items-center justify-end gap-2 rounded-2xl border border-white/10 bg-slate-950/45 p-3">
         <button
@@ -171,6 +200,203 @@ function BoardNavigationControls({ canGoBack, canGoForward, onBack, onForward, o
           Next move
         </button>
     </div>
+  );
+}
+
+function MobilePositionInfo({ currentNode, currentScore, path, openingName }) {
+  return (
+    <section className="rounded-[24px] border border-purple-300/18 bg-slate-950/50 p-4">
+      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Current Position</p>
+      <h2 className="mt-2 line-clamp-2 text-xl font-semibold leading-7 text-white">
+        {openingName || "Main position"}
+      </h2>
+      <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{formatLine(path)}</p>
+
+      <div className="mt-4 grid grid-cols-4 gap-2">
+        {[
+          ["ECO", currentNode?.eco || currentNode?.ECO || "N/A"],
+          ["Freq.", currentNode?.games || 0],
+          ["Win", `${currentScore}%`],
+          ["Moves", currentNode?.children?.length || 0],
+        ].map(([label, value]) => (
+          <div key={label} className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.035] p-2.5 text-center">
+            <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">{label}</p>
+            <p className="mt-1 truncate text-sm font-semibold text-white">{value}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function MobileOpeningTree({ currentNode, colorScope, onColorScopeChange, onSelectMove, isLoadingMoves, open, onToggle, compact = false }) {
+  const moves = currentNode?.children || [];
+  const filteredMoves =
+    colorScope === "white"
+      ? moves.filter((move) => (move.whiteGames || 0) > 0)
+      : colorScope === "black"
+        ? moves.filter((move) => (move.blackGames || 0) > 0)
+        : moves;
+
+  return (
+    <section className="rounded-[24px] border border-purple-300/18 bg-slate-950/48">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex min-h-14 w-full items-center justify-between gap-3 px-4 py-3 text-left"
+        aria-expanded={open}
+      >
+        <span>
+          <span className="astro-eyebrow">Opening Tree</span>
+          <span className="mt-1 block text-lg font-semibold text-white">{moves.length} candidate moves</span>
+        </span>
+        <span className={["text-xl text-purple-200 transition", open ? "rotate-45" : ""].join(" ")}>+</span>
+      </button>
+
+      {open ? (
+        <div className="border-t border-white/10 p-4">
+          <div className="mb-3 flex gap-1 rounded-2xl border border-white/10 bg-slate-950/60 p-1">
+            {[
+              ["all", "All"],
+              ["white", "White"],
+              ["black", "Black"],
+            ].map(([scope, label]) => (
+              <button
+                key={scope}
+                type="button"
+                onClick={() => onColorScopeChange(scope)}
+                className={[
+                  "min-h-10 flex-1 rounded-xl px-3 py-2 text-xs font-semibold transition",
+                  colorScope === scope
+                    ? "border border-cyan-300/30 bg-cyan-500/10 text-cyan-100"
+                    : "text-slate-400",
+                ].join(" ")}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {isLoadingMoves ? (
+            <div className="grid place-items-center gap-3 rounded-2xl border border-purple-300/18 bg-slate-950/50 p-6 text-center">
+              <div className="h-10 w-10 animate-spin rounded-full border-2 border-transparent border-r-purple-400 border-t-cyan-300" />
+              <p className="text-sm text-slate-400">Loading position moves...</p>
+            </div>
+          ) : filteredMoves.length ? (
+            <div className={`${compact ? "max-h-[18rem]" : "max-h-[26rem]"} grid gap-2 overflow-y-auto pr-1 [scrollbar-width:thin]`}>
+              {filteredMoves.slice(0, compact ? 10 : 18).map((move, index) => {
+                const score = typeof move.score === "number" ? Math.round(move.score) : scorePercent(move);
+                const games =
+                  colorScope === "white" ? move.whiteGames || 0 : colorScope === "black" ? move.blackGames || 0 : move.games || 0;
+                return (
+                  <button
+                    key={`${move.id}-${index}`}
+                    type="button"
+                    onClick={() => onSelectMove(move)}
+                    className="grid min-h-14 grid-cols-[minmax(0,1fr)_70px_64px] items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.035] px-3 py-2 text-left"
+                  >
+                    <span className="min-w-0 truncate text-base font-semibold text-white">{move.san || move.move}</span>
+                    <span className="rounded-full border border-white/10 bg-slate-950/45 px-2 py-1 text-center text-xs font-semibold text-slate-200">
+                      {games}
+                    </span>
+                    <span className="text-right text-sm font-semibold text-cyan-100">{score}%</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-5 text-center text-sm text-slate-500">
+              Terminal position in your current repertoire.
+            </div>
+          )}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function MobilePositionStats({ currentNode, currentScore }) {
+  const games = currentNode?.games || 0;
+  const drawRate = games ? Math.round(((currentNode?.draws || 0) / games) * 100) : 0;
+  const blackScore = Math.max(0, 100 - currentScore);
+  const stats = [
+    ["Games Reached", games],
+    ["White Score", `${currentScore}%`],
+    ["Black Score", `${blackScore}%`],
+    ["Draw Rate", `${drawRate}%`],
+    ["Average Rating", currentNode?.averageRating || "N/A"],
+  ];
+
+  return (
+    <section>
+      <div className="mb-3 px-1">
+        <p className="astro-eyebrow">Position Statistics</p>
+      </div>
+      <div className="mobile-openings-stats flex snap-x gap-3 overflow-x-auto pb-2">
+        {stats.map(([label, value]) => (
+          <article key={label} className="min-w-[62%] snap-start rounded-[22px] border border-purple-300/18 bg-slate-950/55 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">{label}</p>
+            <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function MobilePositionInsights({ insights }) {
+  return (
+    <section className="grid gap-3">
+      <div className="px-1">
+        <p className="astro-eyebrow">Position Insights</p>
+        <h2 className="mt-1 text-2xl font-semibold text-white">Padrões da posição</h2>
+      </div>
+      {insights.length ? (
+        insights.map((insight) => (
+          <article key={`${insight.type}-${insight.title}`} className="rounded-[24px] border border-purple-300/18 bg-slate-950/50 p-4">
+            <div className="mb-3 h-1.5 w-14 rounded-full bg-gradient-to-r from-purple-400 to-cyan-300" />
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">{insight.type || "insight"}</p>
+            <h3 className="mt-2 text-lg font-semibold text-white">{insight.title}</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-300">{insight.description}</p>
+          </article>
+        ))
+      ) : (
+        <div className="rounded-[24px] border border-white/10 bg-slate-950/45 p-5 text-sm leading-6 text-slate-400">
+          Analyze more games in this line to unlock position-specific blockers, mistakes and recommendations.
+        </div>
+      )}
+    </section>
+  );
+}
+
+function MobileRelatedGames({ currentNode, path }) {
+  const relatedGames = currentNode?.relatedGames || currentNode?.gamesList || currentNode?.examples || [];
+
+  return (
+    <section className="grid gap-3">
+      <div className="px-1">
+        <p className="astro-eyebrow">Related Games</p>
+        <h2 className="mt-1 text-2xl font-semibold text-white">Partidas nessa linha</h2>
+      </div>
+      {relatedGames.length ? (
+        relatedGames.slice(0, 8).map((game, index) => (
+          <button
+            key={game.id || game.url || index}
+            type="button"
+            className="rounded-[24px] border border-white/10 bg-slate-950/48 p-4 text-left"
+            onClick={() => game.url && window.open(game.url, "_blank", "noreferrer")}
+          >
+            <p className="font-semibold text-white">{game.opponent || game.title || "Analyzed game"}</p>
+            <p className="mt-2 text-sm text-slate-400">{game.result || "Result N/A"} · {game.date || "Date N/A"}</p>
+            <p className="mt-2 line-clamp-2 text-sm text-slate-500">{game.opening || formatLine(path)}</p>
+          </button>
+        ))
+      ) : (
+        <div className="rounded-[24px] border border-white/10 bg-slate-950/45 p-5 text-sm leading-6 text-slate-400">
+          Related games will appear here when the backend links analyzed games to this exact position.
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -254,6 +480,8 @@ export default function OpeningsPage({ onOpenAnalysis }) {
   const [apiError, setApiError] = useState("");
   const [isNodeLoading, setIsNodeLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("moves");
+  const [mobileTab, setMobileTab] = useState("tree");
+  const [mobileTreeOpen, setMobileTreeOpen] = useState(true);
   const [colorScope, setColorScope] = useState("all");
   const [orientation, setOrientation] = useState("white");
 
@@ -438,6 +666,11 @@ export default function OpeningsPage({ onOpenAnalysis }) {
     handleJumpToPly(0);
   }, [path]);
 
+  const handleGoLast = useCallback(() => {
+    if (!nextMoveCandidate) return;
+    handleSelectMove(nextMoveCandidate);
+  }, [nextMoveCandidate, path]);
+
   useEffect(() => {
     const handleKeyDown = (event) => {
       const tagName = event.target?.tagName?.toLowerCase?.();
@@ -487,7 +720,99 @@ export default function OpeningsPage({ onOpenAnalysis }) {
   }
 
   return (
-    <div className="grid gap-6">
+    <>
+    <div className="grid gap-4 md:hidden">
+      <MobilePositionInfo
+        currentNode={currentNode}
+        currentScore={currentScore}
+        path={path}
+        openingName={overview.mostPlayedOpening}
+      />
+
+      <section className="astro-card p-3">
+        <div className="mb-3 flex items-center justify-between gap-3 px-1">
+          <div>
+            <p className="astro-eyebrow">Opening Observatory</p>
+            <h1 className="mt-1 text-2xl font-semibold text-white">Explorer</h1>
+          </div>
+          <button
+            type="button"
+            onClick={() => setOrientation((value) => (value === "white" ? "black" : "white"))}
+            className="min-h-11 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200"
+          >
+            Flip
+          </button>
+        </div>
+
+        <ReviewBoard
+          fen={boardFen}
+          orientation={orientation}
+          onMove={handleBoardMove}
+          soundEnabled
+          maxBoardWidth={430}
+          shellMaxWidth={460}
+          viewportHeightRatio={0.58}
+        />
+
+        <BoardNavigationControls
+          mobile
+          canGoBack={canGoBack}
+          canGoForward={canGoForward}
+          onBack={handleGoBack}
+          onForward={handleGoForward}
+          onReset={handleResetLine}
+          onFirst={handleResetLine}
+          onLast={handleGoLast}
+        />
+      </section>
+
+      <MobileOpeningTree
+        currentNode={currentNode}
+        colorScope={colorScope}
+        onColorScopeChange={setColorScope}
+        onSelectMove={handleSelectMove}
+        isLoadingMoves={isNodeLoading}
+        open={mobileTreeOpen}
+        onToggle={() => setMobileTreeOpen((value) => !value)}
+        compact
+      />
+
+      <div className="grid grid-cols-3 gap-1 rounded-[24px] border border-purple-300/18 bg-slate-950/55 p-1">
+        {[
+          ["stats", "Stats"],
+          ["insights", "Insights"],
+          ["games", "Games"],
+        ].map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setMobileTab(id)}
+            className={[
+              "min-h-11 rounded-2xl px-2 py-2 text-xs font-semibold transition",
+              mobileTab === id
+                ? "border border-cyan-300/30 bg-cyan-300/[0.08] text-cyan-100"
+                : "text-slate-400",
+            ].join(" ")}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {mobileTab === "stats" ? (
+        <MobilePositionStats currentNode={currentNode} currentScore={currentScore} />
+      ) : null}
+
+      {mobileTab === "insights" ? (
+        <MobilePositionInsights insights={insights} />
+      ) : null}
+
+      {mobileTab === "games" ? (
+        <MobileRelatedGames currentNode={currentNode} path={path} />
+      ) : null}
+    </div>
+
+    <div className="hidden gap-6 md:grid">
       <section className="astro-card overflow-hidden p-6">
         <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div>
@@ -597,5 +922,6 @@ export default function OpeningsPage({ onOpenAnalysis }) {
 
       <PositionInsights insights={insights} />
     </div>
+    </>
   );
 }

@@ -46,6 +46,7 @@ function MoveButton({ move, index, active, onClick }) {
 export default function AcademyConceptBoard({ conceptBoard }) {
   const { t } = useLanguage();
   const wrapperRef = useRef(null);
+  const mobileWrapperRef = useRef(null);
   const audioContextRef = useRef(null);
   const [boardWidth, setBoardWidth] = useState(560);
   const [currentLineType, setCurrentLineType] = useState("main");
@@ -144,18 +145,22 @@ export default function AcademyConceptBoard({ conceptBoard }) {
   }, [conceptBoard]);
 
   useEffect(() => {
-    if (!wrapperRef.current) return;
-
     const syncBoardWidth = () => {
-      const width = wrapperRef.current?.clientWidth || 560;
-      const max = Math.min(width, 620);
-      const min = window.innerWidth > 900 ? 420 : 280;
+      const visibleWrapper =
+        [mobileWrapperRef.current, wrapperRef.current].find((element) => element?.clientWidth > 0) ||
+        wrapperRef.current ||
+        mobileWrapperRef.current;
+      const width = visibleWrapper?.clientWidth || 560;
+      const viewportSafeWidth = Math.max(260, window.innerWidth - 56);
+      const max = Math.min(width, viewportSafeWidth, 620);
+      const min = window.innerWidth > 900 ? 420 : Math.min(260, viewportSafeWidth);
       setBoardWidth(Math.max(min, Math.floor(max)));
     };
 
     syncBoardWidth();
     const observer = new ResizeObserver(syncBoardWidth);
-    observer.observe(wrapperRef.current);
+    if (wrapperRef.current) observer.observe(wrapperRef.current);
+    if (mobileWrapperRef.current) observer.observe(mobileWrapperRef.current);
     window.addEventListener("resize", syncBoardWidth);
 
     return () => {
@@ -190,9 +195,213 @@ export default function AcademyConceptBoard({ conceptBoard }) {
     setActiveVariationId(variationId);
     setCurrentPly(0);
   };
+  const [mobileTab, setMobileTab] = useState("board");
+
+  const moveListContent = (
+    <div className="min-w-0">
+      <div className="mb-3 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <h4 className="break-words text-sm font-semibold uppercase tracking-[0.14em] text-slate-400">
+          {t("academy.moveList")}
+        </h4>
+        {currentLineType === "variation" ? (
+          <button
+            type="button"
+            onClick={selectMainLine}
+            className="min-h-11 rounded-xl border border-violet-200/20 bg-violet-200/[0.07] px-3 py-2 text-xs font-semibold text-violet-100 transition hover:text-white"
+          >
+            {t("academy.backToMainIdea")}
+          </button>
+        ) : null}
+      </div>
+      <div className="grid min-w-0 max-h-72 gap-2 overflow-y-auto overflow-x-hidden pr-1">
+        {currentMoves.length ? (
+          currentMoves.map((move, index) => (
+            <MoveButton
+              key={`${move.ply || index}-${move.san || move.uci}`}
+              move={move}
+              index={index}
+              active={currentPly === index + 1}
+              onClick={() => navigateToPly(index + 1)}
+            />
+          ))
+        ) : (
+          <p className="break-words rounded-xl border border-white/10 bg-slate-950/35 p-3 text-sm text-slate-400">
+            {t("academy.noConceptMoves")}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+
+  const variationsContent = variations.length ? (
+    <div className="min-w-0">
+      <h4 className="break-words text-sm font-semibold uppercase tracking-[0.14em] text-slate-400">
+        {t("academy.compareAnotherPlan")}
+      </h4>
+      <div className="mt-3 grid gap-3">
+        {variations.map((variation) => (
+          <button
+            key={variation.id}
+            type="button"
+            onClick={() => {
+              selectVariation(variation.id);
+              setMobileTab("board");
+            }}
+            className={[
+              "min-h-14 min-w-0 rounded-2xl border p-4 text-left transition",
+              activeVariationId === variation.id
+                ? "border-violet-300/35 bg-violet-300/[0.08]"
+                : "border-white/10 bg-slate-950/35 hover:border-violet-300/25",
+            ].join(" ")}
+          >
+            <span className="block break-words font-semibold text-white">{variation.label}</span>
+            <span className="mt-1 block max-h-24 overflow-y-auto break-words pr-2 text-sm leading-5 text-slate-400 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.35)_transparent]">
+              {variation.description}
+            </span>
+            <span className="mt-3 block text-xs font-semibold text-violet-100">
+              {t("academy.viewLine")}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  ) : null;
 
   return (
-    <section className="grid gap-4">
+    <>
+    <section className="grid gap-4 md:hidden" id="academy-lesson-board">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-200/80">
+          {t("academy.conceptPosition")}
+        </p>
+        <h2 className="mt-2 text-2xl font-semibold text-white">
+          {t("academy.seeTheIdea")}
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-slate-400">
+          {t("academy.conceptBoardDescription")}
+        </p>
+      </div>
+
+      <div className="academy-lesson-mobile-card rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.92),rgba(9,12,18,0.98))] p-3 shadow-[0_18px_48px_rgba(0,0,0,0.24)]">
+        <div className="mb-3 grid grid-cols-3 gap-2 rounded-2xl border border-white/10 bg-slate-950/45 p-1.5">
+          {[
+            ["board", "Board"],
+            ["moves", "Moves"],
+            ["notes", "Notes"],
+          ].map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setMobileTab(id)}
+              className={[
+                "min-h-11 rounded-xl px-2 py-2 text-xs font-semibold transition",
+                mobileTab === id
+                  ? "bg-violet-300/16 text-white shadow-[0_0_18px_rgba(168,85,247,0.12)]"
+                  : "text-slate-400",
+              ].join(" ")}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {mobileTab === "board" ? (
+          <div className="grid gap-3">
+            <div className="academy-lesson-board-shell game-review-board-shell">
+              <div ref={mobileWrapperRef} className="game-review-board-wrapper">
+                <div
+                  className="game-review-board-frame"
+                  style={{ width: `${boardWidth}px`, height: `${boardWidth}px` }}
+                >
+                  <Chessboard
+                    id={`academy-concept-board-mobile-${conceptBoard?.title || "lesson"}`}
+                    position={boardFen}
+                    boardWidth={boardWidth}
+                    boardOrientation={conceptBoard?.orientation === "black" ? "black" : "white"}
+                    customDarkSquareStyle={{ backgroundColor: "#373050" }}
+                    customLightSquareStyle={{ backgroundColor: "#b8aecf" }}
+                    customSquareStyles={squareStyles}
+                    arePiecesDraggable={false}
+                    areArrowsAllowed={false}
+                    showBoardNotation
+                  />
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2 border-t border-white/10 pt-3">
+                <button
+                  type="button"
+                  onClick={() => navigateToPly(0)}
+                  className="min-h-11 rounded-xl border border-white/10 bg-white/[0.04] px-2 py-2 text-xs font-semibold text-slate-300"
+                >
+                  Reset
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigateToPly(currentPly - 1)}
+                  disabled={currentPly === 0}
+                  className="min-h-11 rounded-xl border border-white/10 bg-white/[0.04] px-2 py-2 text-xs font-semibold text-slate-300 disabled:opacity-40"
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigateToPly(currentPly + 1)}
+                  disabled={currentPly >= maxPly}
+                  className="min-h-11 rounded-xl border border-violet-200/25 bg-violet-300/12 px-2 py-2 text-xs font-semibold text-violet-100 disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-violet-100/80">
+                {currentLineType === "variation"
+                  ? activeVariation?.label || t("academy.alternativeLine")
+                  : t("academy.mainIdea")}
+              </p>
+              <h3 className="mt-2 text-lg font-semibold text-white">
+                {activeExplanation.title}
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                {activeExplanation.text}
+              </p>
+            </div>
+          </div>
+        ) : null}
+
+        {mobileTab === "moves" ? (
+          <div className="grid gap-4 rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+            {moveListContent}
+            {variationsContent}
+          </div>
+        ) : null}
+
+        {mobileTab === "notes" ? (
+          <div className="grid gap-4 rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+            <div>
+              <span className="rounded-full border border-violet-200/20 bg-violet-200/[0.07] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-violet-100">
+                {t("academy.conceptOnBoard")}
+              </span>
+              <h3 className="mt-4 text-xl font-semibold leading-tight text-white">
+                {conceptBoard?.title || t("academy.conceptOnBoard")}
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                {conceptBoard?.description}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-violet-200/15 bg-violet-200/[0.045] p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-100/80">
+                {t("academy.whyThisMoveMatters")}
+              </p>
+              <h4 className="mt-2 text-lg font-semibold text-white">{activeExplanation.title}</h4>
+              <p className="mt-2 text-sm leading-6 text-slate-300">{activeExplanation.text}</p>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </section>
+
+    <section className="hidden gap-4 md:grid" id="academy-lesson-board-desktop">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-200/80">
           {t("academy.conceptPosition")}
@@ -291,72 +500,14 @@ export default function AcademyConceptBoard({ conceptBoard }) {
             </p>
           </div>
 
-          <div className="min-w-0">
-            <div className="mb-3 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <h4 className="break-words text-sm font-semibold uppercase tracking-[0.14em] text-slate-400">
-                {t("academy.moveList")}
-              </h4>
-              {currentLineType === "variation" ? (
-                <button
-                  type="button"
-                  onClick={selectMainLine}
-                  className="text-xs font-semibold text-violet-100 transition hover:text-white"
-                >
-                  {t("academy.backToMainIdea")}
-                </button>
-              ) : null}
-            </div>
-            <div className="grid min-w-0 max-h-56 gap-2 overflow-y-auto overflow-x-hidden pr-1">
-              {currentMoves.length ? (
-                currentMoves.map((move, index) => (
-                  <MoveButton
-                    key={`${move.ply || index}-${move.san || move.uci}`}
-                    move={move}
-                    index={index}
-                    active={currentPly === index + 1}
-                    onClick={() => navigateToPly(index + 1)}
-                  />
-                ))
-              ) : (
-                <p className="break-words rounded-xl border border-white/10 bg-slate-950/35 p-3 text-sm text-slate-400">
-                  {t("academy.noConceptMoves")}
-                </p>
-              )}
-            </div>
-          </div>
+          {moveListContent}
 
           {variations.length ? (
-            <div className="min-w-0">
-              <h4 className="break-words text-sm font-semibold uppercase tracking-[0.14em] text-slate-400">
-                {t("academy.compareAnotherPlan")}
-              </h4>
-              <div className="mt-3 grid gap-3">
-                {variations.map((variation) => (
-                  <button
-                    key={variation.id}
-                    type="button"
-                    onClick={() => selectVariation(variation.id)}
-                    className={[
-                      "min-w-0 rounded-2xl border p-4 text-left transition",
-                      activeVariationId === variation.id
-                        ? "border-violet-300/35 bg-violet-300/[0.08]"
-                        : "border-white/10 bg-slate-950/35 hover:border-violet-300/25",
-                    ].join(" ")}
-                  >
-                    <span className="block break-words font-semibold text-white">{variation.label}</span>
-                    <span className="mt-1 block max-h-24 overflow-y-auto break-words pr-2 text-sm leading-5 text-slate-400 [scrollbar-width:thin] [scrollbar-color:rgba(148,163,184,0.35)_transparent]">
-                      {variation.description}
-                    </span>
-                    <span className="mt-3 block text-xs font-semibold text-violet-100">
-                      {t("academy.viewLine")}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
+            variationsContent
           ) : null}
         </aside>
       </div>
     </section>
+    </>
   );
 }

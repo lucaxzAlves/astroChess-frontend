@@ -802,6 +802,11 @@ export function normalizeBackendDifficulty(difficulty) {
 }
 
 export function createCyclePayload(config, username) {
+  const timezone =
+    typeof Intl !== "undefined"
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Sao_Paulo"
+      : "America/Sao_Paulo";
+
   return {
     username,
     config: {
@@ -818,6 +823,7 @@ export function createCyclePayload(config, username) {
         endRoundWithMistakeReview: Boolean(config.endWithMistakeReview),
       },
       includePersonalWeaknesses: config.includePersonalWeaknesses !== false,
+      timezone,
     },
   };
 }

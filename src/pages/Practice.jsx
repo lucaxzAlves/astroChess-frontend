@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../contexts/LanguageContext.jsx";
 import MasterReplayPage from "../components/practice/masterReplay/MasterReplayPage.jsx";
 import PatternForgePage from "../components/practice/patternForge/PatternForgePage.jsx";
@@ -313,7 +313,12 @@ function DetailPanel({ mode }) {
   );
 }
 
-export default function Practice({ connectedUsername = "", playerProfile = null }) {
+export default function Practice({
+  connectedUsername = "",
+  playerProfile = null,
+  initialExperience = "",
+  onExperienceChange,
+}) {
   const { t } = useLanguage();
   const [activeExperience, setActiveExperience] = useState("practice");
   const [selectedTrainingModeId, setSelectedTrainingModeId] = useState(trainingModes[0].id);
@@ -323,12 +328,31 @@ export default function Practice({ connectedUsername = "", playerProfile = null 
     [selectedTrainingModeId]
   );
 
+  useEffect(() => {
+    const nextExperience = initialExperience || "practice";
+    setActiveExperience(nextExperience);
+    if (initialExperience) {
+      setSelectedTrainingModeId(initialExperience);
+    }
+  }, [initialExperience]);
+
+  const openExperience = (experience) => {
+    setActiveExperience(experience);
+    setSelectedTrainingModeId(experience);
+    onExperienceChange?.(experience === "practice" ? "" : experience);
+  };
+
+  const backToPractice = () => {
+    setActiveExperience("practice");
+    onExperienceChange?.("");
+  };
+
   if (activeExperience === "academy") {
-    return <AcademyPage onBackToPractice={() => setActiveExperience("practice")} />;
+    return <AcademyPage onBackToPractice={backToPractice} />;
   }
 
   if (activeExperience === "master-replay") {
-    return <MasterReplayPage onBackToPractice={() => setActiveExperience("practice")} />;
+    return <MasterReplayPage onBackToPractice={backToPractice} />;
   }
 
   if (activeExperience === "pattern-forge") {
@@ -336,7 +360,7 @@ export default function Practice({ connectedUsername = "", playerProfile = null 
       <PatternForgePage
         connectedUsername={connectedUsername}
         playerProfile={playerProfile}
-        onBackToPractice={() => setActiveExperience("practice")}
+        onBackToPractice={backToPractice}
       />
     );
   }
@@ -367,13 +391,13 @@ export default function Practice({ connectedUsername = "", playerProfile = null 
             onSelect={() => setSelectedTrainingModeId(mode.id)}
             onOpen={
               mode.id === "academy"
-                ? () => setActiveExperience("academy")
+                ? () => openExperience("academy")
                 : mode.id === "master-replay"
-                  ? () => setActiveExperience("master-replay")
+                  ? () => openExperience("master-replay")
                   : mode.id === "personal-replay"
                     ? undefined
                     : mode.id === "pattern-forge"
-                      ? () => setActiveExperience("pattern-forge")
+                      ? () => openExperience("pattern-forge")
                 : undefined
             }
           />

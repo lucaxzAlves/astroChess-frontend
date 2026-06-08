@@ -237,32 +237,36 @@ function OnboardingCommandCenter({
   const { t } = useLanguage();
 
   return (
-    <section className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-6xl items-center py-4">
-      <DashboardCard className="relative flex min-h-[calc(100vh-9rem)] w-full items-center overflow-hidden p-6 sm:p-8 lg:p-10">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-purple-500/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 left-12 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
-        <div className="relative grid w-full items-center gap-8 xl:grid-cols-[minmax(42rem,1fr)_minmax(22rem,26rem)] xl:gap-12">
-          <div className="mx-auto max-w-[46rem] text-center lg:mx-0 lg:text-left">
+    <section className="mx-auto w-full max-w-6xl pt-0 sm:pt-2 lg:pt-8">
+      <div className="relative overflow-hidden rounded-[28px] border border-purple-300/20 bg-[linear-gradient(145deg,rgba(15,15,28,0.96),rgba(8,10,18,0.98))] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.28)] sm:p-7 lg:p-9">
+        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-purple-500/16 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 left-10 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
+
+        <div className="relative grid w-full gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] lg:items-center xl:gap-10">
+          <div className="max-w-xl text-left">
             <p className="astro-eyebrow">Astro Chess</p>
-            <h1 className="mt-4 max-w-[44rem] text-balance text-4xl font-semibold leading-[1.06] text-white sm:text-5xl xl:text-[3.55rem]">
+            <h1 className="mt-4 max-w-[32rem] text-3xl font-semibold leading-[1.08] text-white sm:text-4xl xl:text-5xl">
               Conecte sua conta Chess.com ao centro de comando
             </h1>
-            <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base xl:mx-0">
-              Navegue por jogos, análise, treino, AI Coach e torneios a partir do seu
-              universo pessoal de xadrez.
+            <p className="mt-5 max-w-[32rem] text-sm leading-7 text-slate-300 sm:text-base">
+              Navegue por jogos, análise, treino, AI Coach e torneios a partir do seu universo pessoal de xadrez.
             </p>
-            <div className="mx-auto mt-7 grid max-w-2xl gap-3 sm:grid-cols-3 xl:mx-0">
+
+            <div className="mt-6 grid max-w-[32rem] gap-3 sm:grid-cols-3">
               {["Perfil real", "Dados vivos", "Treino personalizado"].map((item) => (
-                <div key={item} className="rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3 text-sm font-medium text-slate-200">
+                <div
+                  key={item}
+                  className="rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3 text-sm font-medium text-slate-200"
+                >
                   {item}
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="mx-auto w-full max-w-md rounded-[28px] border border-purple-300/20 bg-slate-950/55 p-5 shadow-[0_24px_60px_rgba(0,0,0,0.24)] sm:p-6 xl:mx-0">
+          <div className="w-full max-w-md rounded-[26px] border border-purple-300/20 bg-slate-950/55 p-5 shadow-[0_20px_54px_rgba(0,0,0,0.24)] sm:p-6 lg:ml-auto">
             <div className="flex items-start gap-4">
-              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-purple-300/25 bg-purple-300/[0.08] text-purple-100">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-purple-300/25 bg-purple-300/[0.08] text-purple-100">
                 ♛
               </div>
               <div className="min-w-0">
@@ -270,7 +274,8 @@ function OnboardingCommandCenter({
                 <p className="mt-2 text-sm leading-6 text-slate-400">{t("home.connectDescription")}</p>
               </div>
             </div>
-            <div className="mt-7 rounded-2xl border border-white/10 bg-slate-950/45 p-4">
+
+            <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/45 p-4">
               <UsernameField
                 username={username}
                 onUsernameChange={onUsernameChange}
@@ -283,7 +288,7 @@ function OnboardingCommandCenter({
             </div>
           </div>
         </div>
-      </DashboardCard>
+      </div>
     </section>
   );
 }
@@ -574,11 +579,267 @@ function RatingOrbitCard({ ratings }) {
   );
 }
 
-function SkillConstellationChart({ skills, overallScore }) {
+function MobilePlayerHero({ playerProfile, connectedUsername, ratings }) {
+  const bestRating = ratings
+    .map((rating) => Number(rating.current || 0))
+    .filter(Boolean)
+    .sort((a, b) => b - a)[0];
+  const displayName = playerProfile.name || playerProfile.username || connectedUsername;
+
+  return (
+    <DashboardCard className="overflow-hidden p-5">
+      <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-cyan-200/60 to-transparent" />
+      <div className="flex flex-col items-center text-center">
+        <div className="relative">
+          <div className="absolute inset-0 rounded-[30px] bg-purple-400/20 blur-2xl" />
+          {playerProfile.avatar ? (
+            <img
+              src={playerProfile.avatar}
+              alt={`${playerProfile.username} avatar`}
+              className="relative h-24 w-24 rounded-[30px] border border-purple-200/25 object-cover shadow-[0_18px_44px_rgba(0,0,0,0.38)]"
+            />
+          ) : (
+            <div className="relative grid h-24 w-24 place-items-center rounded-[30px] border border-purple-200/25 bg-gradient-to-br from-purple-300 to-cyan-200 text-3xl font-bold text-slate-950 shadow-[0_18px_44px_rgba(0,0,0,0.38)]">
+              {profileInitial(playerProfile.username)}
+            </div>
+          )}
+        </div>
+
+        <p className="mt-4 text-xs font-bold uppercase tracking-[0.2em] text-cyan-100">
+          Player Signal
+        </p>
+        <h1 className="mt-2 max-w-full break-words text-3xl font-semibold leading-tight text-white">
+          {playerProfile.username || connectedUsername}
+        </h1>
+        {displayName && displayName !== playerProfile.username ? (
+          <p className="mt-1 text-sm text-slate-400">{displayName}</p>
+        ) : null}
+
+        <div className="mt-4 flex flex-wrap justify-center gap-2 text-xs">
+          <span className="rounded-full border border-purple-300/20 bg-purple-300/[0.08] px-3 py-1.5 font-semibold text-purple-100">
+            {getCountryDisplay(playerProfile.country)}
+          </span>
+          <span className="rounded-full border border-cyan-300/20 bg-cyan-300/[0.08] px-3 py-1.5 font-semibold text-cyan-100">
+            {playerProfile.status || "Chess.com"}
+          </span>
+        </div>
+
+        <div className="mt-5 grid w-full grid-cols-2 gap-3">
+          <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
+            <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Rating</p>
+            <p className="mt-1 text-2xl font-semibold text-white">{bestRating || "N/A"}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
+            <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Desde</p>
+            <p className="mt-1 text-sm font-semibold leading-6 text-white">{formatUnixDate(playerProfile.joined)}</p>
+          </div>
+        </div>
+      </div>
+    </DashboardCard>
+  );
+}
+
+function MobileRatingsCarousel({ ratings }) {
+  const { t } = useLanguage();
+  const carouselRatings = [...ratings, ...ratings];
+
+  return (
+    <section className="min-w-0">
+      <div className="mb-3 flex items-end justify-between gap-3 px-1">
+        <div>
+          <p className="astro-eyebrow">Ratings</p>
+          <h2 className="mt-1 text-xl font-semibold text-white">Satélites de força</h2>
+        </div>
+        <span className="text-xs font-medium text-slate-500">carrossel</span>
+      </div>
+      <div className="mobile-home-carousel mobile-home-auto-carousel overflow-x-auto pb-2">
+        <div className="mobile-home-carousel-track flex w-max snap-x gap-3">
+        {carouselRatings.map((rating, index) => (
+          <article
+            key={`${rating.label}-${index}`}
+            className="w-[min(72vw,320px)] snap-start rounded-[24px] border border-purple-300/18 bg-[linear-gradient(180deg,rgba(18,18,31,0.92),rgba(8,8,17,0.98))] p-4 shadow-[0_12px_28px_rgba(0,0,0,0.22)]"
+            aria-hidden={index >= ratings.length}
+          >
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm font-semibold text-white">{rating.label}</p>
+              <span className="grid h-9 w-9 place-items-center rounded-full border border-cyan-300/20 bg-cyan-300/[0.08] text-xs font-bold text-cyan-100">
+                {rating.label.charAt(0)}
+              </span>
+            </div>
+            <p className="mt-4 text-4xl font-semibold text-white">{rating.current ?? t("common.na")}</p>
+            <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+              <div className="rounded-xl bg-slate-950/55 p-3">
+                <p className="text-slate-500">Melhor</p>
+                <p className="mt-1 font-semibold text-purple-100">{rating.best ?? t("common.na")}</p>
+              </div>
+              <div className="rounded-xl bg-slate-950/55 p-3">
+                <p className="text-slate-500">Jogos</p>
+                <p className="mt-1 font-semibold text-slate-100">{getRatingGames(rating.record, t("common.na"))}</p>
+              </div>
+            </div>
+          </article>
+        ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MobileSkillMatrix({ analysisProfile, onNavigate }) {
+  const skillEntries = getSkillEntries(analysisProfile?.skillMap);
+
+  if (!skillEntries.length) {
+    return (
+      <DashboardCard className="p-5">
+        <p className="astro-eyebrow">Skill Matrix</p>
+        <h2 className="mt-2 text-xl font-semibold text-white">Skill Matrix bloqueado</h2>
+        <p className="mt-3 text-sm leading-6 text-slate-400">
+          Rode uma análise geral para liberar seu mapa de habilidades no mobile.
+        </p>
+        <button
+          type="button"
+          onClick={() => onNavigate?.("AI Coach")}
+          className="astro-button-secondary mt-5 min-h-11 w-full rounded-xl px-4 py-3 text-sm font-semibold"
+        >
+          Criar meu perfil
+        </button>
+      </DashboardCard>
+    );
+  }
+
+  const sortedSkills = [...skillEntries].sort((a, b) => b.value - a.value);
+  const topStrengths = sortedSkills.slice(0, 2);
+  const needsWork = sortedSkills.slice(-2).reverse();
+
+  return (
+    <DashboardCard className="p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="astro-eyebrow">Skill Matrix</p>
+          <h2 className="mt-2 text-xl font-semibold text-white">Diagnóstico rápido</h2>
+        </div>
+        <button
+          type="button"
+          onClick={() => onNavigate?.("Analysis")}
+          className="rounded-full border border-purple-300/24 bg-purple-300/[0.08] px-3 py-2 text-xs font-semibold text-purple-100"
+        >
+          Abrir
+        </button>
+      </div>
+
+      <div className="mt-5 grid gap-4">
+        <SkillConstellationChart
+          skills={skillEntries}
+          overallScore={analysisProfile?.skillMap?.overallScore ?? Math.round(skillEntries.reduce((sum, skill) => sum + skill.value, 0) / skillEntries.length)}
+          compact
+        />
+
+        <div className="grid gap-3">
+          <MobileSkillGroup title="Top Strengths" skills={topStrengths} tone="cyan" />
+          <MobileSkillGroup title="Needs Improvement" skills={needsWork} tone="purple" />
+        </div>
+      </div>
+    </DashboardCard>
+  );
+}
+
+function MobileSkillGroup({ title, skills, tone }) {
+  const barClass = tone === "cyan" ? "from-cyan-200 to-purple-300" : "from-purple-300 to-pink-300";
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
+      <h3 className="text-sm font-semibold text-white">{title}</h3>
+      <div className="mt-3 grid gap-3">
+        {skills.map((skill) => (
+          <div key={skill.key}>
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <span className="min-w-0 truncate text-slate-200">{skill.label}</span>
+              <span className="font-semibold text-white">{skill.value}</span>
+            </div>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/[0.06]">
+              <div className={`h-full rounded-full bg-gradient-to-r ${barClass}`} style={{ width: `${skill.value}%` }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MobileOrbitCarousel({ onNavigate }) {
+  const carouselItems = [...solarNavigationItems, ...solarNavigationItems];
+
+  return (
+    <section className="min-w-0">
+      <div className="mb-3 flex items-end justify-between gap-3 px-1">
+        <div>
+          <p className="astro-eyebrow">Astro Map</p>
+          <h2 className="mt-1 text-xl font-semibold text-white">Navegação rápida</h2>
+        </div>
+        <span className="text-xs font-medium text-slate-500">carrossel</span>
+      </div>
+      <div className="mobile-home-carousel mobile-home-auto-carousel overflow-x-auto pb-2">
+        <div className="mobile-home-carousel-track flex w-max snap-x gap-3">
+        {carouselItems.map((item, index) => (
+          <button
+            key={`${item.id}-${index}`}
+            type="button"
+            onClick={() => onNavigate?.(item.targetPage)}
+            className="min-h-[150px] w-[min(68vw,300px)] snap-start rounded-[26px] border border-purple-300/18 bg-slate-950/48 p-4 text-left transition active:scale-[0.985]"
+            aria-hidden={index >= solarNavigationItems.length}
+            tabIndex={index >= solarNavigationItems.length ? -1 : 0}
+          >
+            <span
+              className="relative grid h-14 w-14 place-items-center rounded-full border border-white/10 shadow-[0_0_22px_var(--planet-glow)]"
+              style={{
+                background: `radial-gradient(circle at 35% 30%, rgba(255,255,255,0.48), ${item.color} 34%, rgba(7,7,17,0.88) 78%)`,
+                "--planet-glow": item.glow,
+              }}
+            >
+              <span className="absolute inset-2 rounded-full border border-white/20 opacity-50" />
+            </span>
+            <p className="mt-4 font-semibold text-white">{item.planetName}</p>
+            <p className="mt-2 line-clamp-2 text-sm leading-5 text-slate-400">{item.description}</p>
+          </button>
+        ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MobileQuickLaunch({ onNavigate }) {
+  const actions = [
+    { label: "Analyze Games", targetPage: "AI Coach" },
+    { label: "Continue Training", targetPage: "Practice" },
+    { label: "Open AI Coach", targetPage: "AI Coach" },
+    { label: "Browse Academy", targetPage: "Practice" },
+  ];
+
+  return (
+    <DashboardCard className="p-5">
+      <p className="astro-eyebrow">Quick Launch</p>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        {actions.map((action) => (
+          <button
+            key={action.label}
+            type="button"
+            onClick={() => onNavigate?.(action.targetPage)}
+            className="min-h-12 rounded-2xl border border-purple-300/20 bg-purple-300/[0.08] px-3 py-3 text-sm font-semibold text-purple-50 transition active:scale-[0.985]"
+          >
+            {action.label}
+          </button>
+        ))}
+      </div>
+    </DashboardCard>
+  );
+}
+
+function SkillConstellationChart({ skills, overallScore, compact = false }) {
   const visibleSkills = skills.slice(0, 8);
   const center = 50;
-  const maxRadius = 34;
-  const labelRadius = 44;
+  const maxRadius = compact ? 30 : 34;
+  const labelRadius = compact ? 39 : 44;
   const points = visibleSkills.map((skill, index) => {
     const angle = -90 + (360 / visibleSkills.length) * index;
     const radians = (angle * Math.PI) / 180;
@@ -599,8 +860,8 @@ function SkillConstellationChart({ skills, overallScore }) {
   const polygonPoints = points.map((point) => `${point.x},${point.y}`).join(" ");
 
   return (
-    <div className="rounded-[28px] border border-purple-300/20 bg-slate-950/45 p-4">
-      <div className="relative mx-auto aspect-square w-full max-w-[440px]">
+    <div className={`rounded-[28px] border border-purple-300/20 bg-slate-950/45 ${compact ? "p-2.5" : "p-4"}`}>
+      <div className={`relative mx-auto aspect-square w-full ${compact ? "max-w-[320px]" : "max-w-[440px]"}`}>
         <svg
           viewBox="0 0 100 100"
           className="h-full w-full overflow-visible"
@@ -672,19 +933,19 @@ function SkillConstellationChart({ skills, overallScore }) {
           {points.map((point) => (
             <div
               key={`${point.key}-label`}
-              className="absolute w-24 -translate-x-1/2 -translate-y-1/2 text-center"
+              className={`absolute -translate-x-1/2 -translate-y-1/2 text-center ${compact ? "w-16" : "w-24"}`}
               style={{ left: `${point.labelX}%`, top: `${point.labelY}%` }}
             >
-              <p className="truncate text-[11px] font-semibold text-slate-200">{point.label}</p>
-              <p className="text-[10px] text-purple-200">{point.value}</p>
+              <p className={`${compact ? "text-[9px]" : "text-[11px]"} truncate font-semibold text-slate-200`}>{point.label}</p>
+              <p className={`${compact ? "text-[9px]" : "text-[10px]"} text-purple-200`}>{point.value}</p>
             </div>
           ))}
         </div>
 
-        <div className="absolute left-1/2 top-1/2 grid h-24 w-24 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-purple-300/30 bg-[#070711]/90 text-center shadow-[0_0_34px_rgba(168,85,247,0.24)]">
+        <div className={`absolute left-1/2 top-1/2 grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-purple-300/30 bg-[#070711]/90 text-center shadow-[0_0_26px_rgba(168,85,247,0.22)] ${compact ? "h-14 w-14" : "h-[4.5rem] w-[4.5rem]"}`}>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-100">Score</p>
-            <p className="mt-1 text-3xl font-semibold text-white">{overallScore}</p>
+            <p className={`${compact ? "text-[7px]" : "text-[8px]"} font-bold uppercase tracking-[0.14em] text-cyan-100`}>Score</p>
+            <p className={`mt-0.5 font-semibold text-white ${compact ? "text-lg" : "text-2xl"}`}>{overallScore}</p>
           </div>
         </div>
       </div>
@@ -884,6 +1145,43 @@ function RecentFlightLog({ recentGames, onNavigate, onReviewGame }) {
   );
 }
 
+function MobileHomeExperience({
+  playerProfile,
+  connectedUsername,
+  ratings,
+  analysisProfile,
+  recentGames,
+  onNavigate,
+  onReviewGame,
+  hasSkillProfile,
+}) {
+  return (
+    <section className="mobile-home-shell mx-auto flex w-full max-w-[460px] flex-col gap-5 overflow-x-hidden px-1 pb-6">
+      <MobilePlayerHero
+        playerProfile={playerProfile}
+        connectedUsername={connectedUsername}
+        ratings={ratings}
+      />
+
+      <MobileRatingsCarousel ratings={ratings} />
+
+      <MobileSkillMatrix analysisProfile={analysisProfile} onNavigate={onNavigate} />
+
+      <MobileOrbitCarousel onNavigate={onNavigate} />
+
+      <MobileQuickLaunch onNavigate={onNavigate} />
+
+      <MissionControl onNavigate={onNavigate} hasSkillProfile={hasSkillProfile} />
+
+      <RecentFlightLog
+        recentGames={recentGames}
+        onNavigate={onNavigate}
+        onReviewGame={onReviewGame}
+      />
+    </section>
+  );
+}
+
 export default function Home({
   connectedUsername,
   playerProfile,
@@ -938,38 +1236,53 @@ export default function Home({
   }
 
   return (
-    <section className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <CosmicHero
-        playerProfile={playerProfile}
-        connectedUsername={connectedUsername}
-        ratings={ratings}
-        onNavigate={onNavigate}
-      />
-
-      <SolarSystemNavigation onNavigate={onNavigate} />
-
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <PlayerSignalCard
+    <>
+      <div className="lg:hidden">
+        <MobileHomeExperience
           playerProfile={playerProfile}
-          username={username}
-          onUsernameChange={setUsername}
-          onConnect={onConnect}
-          isConnecting={isConnecting}
-          connectError={connectError}
-          connectSuccess={connectSuccess}
+          connectedUsername={connectedUsername}
+          ratings={ratings}
+          analysisProfile={analysisProfile}
+          recentGames={recentGames}
+          onNavigate={onNavigate}
+          onReviewGame={onReviewGame}
+          hasSkillProfile={hasSkillProfile}
         />
-        <RatingOrbitCard ratings={ratings} />
       </div>
 
-      <HomeSkillMatrixPreview analysisProfile={analysisProfile} onNavigate={onNavigate} />
+      <section className="mx-auto hidden w-full max-w-7xl flex-col gap-6 lg:flex">
+        <CosmicHero
+          playerProfile={playerProfile}
+          connectedUsername={connectedUsername}
+          ratings={ratings}
+          onNavigate={onNavigate}
+        />
 
-      <MissionControl onNavigate={onNavigate} hasSkillProfile={hasSkillProfile} />
+        <SolarSystemNavigation onNavigate={onNavigate} />
 
-      <RecentFlightLog
-        recentGames={recentGames}
-        onNavigate={onNavigate}
-        onReviewGame={onReviewGame}
-      />
-    </section>
+        <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+          <PlayerSignalCard
+            playerProfile={playerProfile}
+            username={username}
+            onUsernameChange={setUsername}
+            onConnect={onConnect}
+            isConnecting={isConnecting}
+            connectError={connectError}
+            connectSuccess={connectSuccess}
+          />
+          <RatingOrbitCard ratings={ratings} />
+        </div>
+
+        <HomeSkillMatrixPreview analysisProfile={analysisProfile} onNavigate={onNavigate} />
+
+        <MissionControl onNavigate={onNavigate} hasSkillProfile={hasSkillProfile} />
+
+        <RecentFlightLog
+          recentGames={recentGames}
+          onNavigate={onNavigate}
+          onReviewGame={onReviewGame}
+        />
+      </section>
+    </>
   );
 }

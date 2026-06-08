@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 type EvaluationBarProps = {
   evaluation: number | string | null;
   labelOverride?: string;
+  variant?: "vertical" | "horizontal";
 };
 
 function parseEvaluationValue(evaluation: number | string | null) {
@@ -46,7 +47,7 @@ function parseEvaluationValue(evaluation: number | string | null) {
   return { label: "0.0", whitePercent: 50, numericValue: 0 };
 }
 
-export default function EvaluationBar({ evaluation, labelOverride }: EvaluationBarProps) {
+export default function EvaluationBar({ evaluation, labelOverride, variant = "vertical" }: EvaluationBarProps) {
   const previousValueRef = useRef<number | null>(null);
   const [pulse, setPulse] = useState(false);
   const { label, whitePercent, numericValue } = useMemo(
@@ -68,6 +69,28 @@ export default function EvaluationBar({ evaluation, labelOverride }: EvaluationB
   }, [numericValue]);
 
   const displayLabel = labelOverride || label;
+
+  if (variant === "horizontal") {
+    return (
+      <div
+        className={`game-review-eval-bar horizontal ${pulse ? "eval-bar-swing" : ""}`}
+        aria-label={`Evaluation ${displayLabel}`}
+      >
+        <div className="game-review-eval-track horizontal">
+          <div
+            className="game-review-eval-fill-black horizontal"
+            style={{ width: `${100 - whitePercent}%` }}
+          />
+          <div
+            className="game-review-eval-fill-white horizontal"
+            style={{ width: `${whitePercent}%` }}
+          />
+          <div className="game-review-eval-marker horizontal" style={{ left: `${whitePercent}%` }} />
+        </div>
+        <div className="game-review-eval-label horizontal">{displayLabel}</div>
+      </div>
+    );
+  }
 
   return (
     <div className={`game-review-eval-bar ${pulse ? "eval-bar-swing" : ""}`} aria-label={`Evaluation ${displayLabel}`}>

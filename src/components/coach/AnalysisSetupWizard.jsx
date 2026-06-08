@@ -1106,11 +1106,11 @@ export default function AnalysisSetupWizard({
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex min-h-screen items-center justify-center bg-slate-950/72 p-4 backdrop-blur-md">
+    <div className="fixed inset-0 z-[95] flex h-[100dvh] items-stretch justify-stretch bg-slate-950/72 p-0 backdrop-blur-md sm:min-h-screen sm:items-center sm:justify-center sm:p-4">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.18),transparent_36%)]" />
 
-      <div className="relative z-10 flex h-[min(92vh,980px)] w-full max-w-6xl flex-col overflow-hidden rounded-[32px] border border-white/10 bg-[#0b0d13] shadow-[0_40px_120px_rgba(0,0,0,0.5)]">
-        <div className="border-b border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] px-6 py-5 sm:px-8">
+      <div className="relative z-10 flex h-[100dvh] max-h-[100dvh] min-h-0 w-full flex-col overflow-hidden border-white/10 bg-[#0b0d13] shadow-[0_40px_120px_rgba(0,0,0,0.5)] sm:h-[min(92dvh,980px)] sm:max-w-6xl sm:rounded-[32px] sm:border">
+        <div className="shrink-0 border-b border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] px-4 py-4 sm:px-8 sm:py-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-2">
@@ -1122,7 +1122,7 @@ export default function AnalysisSetupWizard({
                   })}
                 </Badge>
               </div>
-              <h2 className="mt-4 text-2xl font-semibold text-white sm:text-3xl">
+              <h2 className="mt-3 text-xl font-semibold leading-tight text-white sm:mt-4 sm:text-3xl">
                 {modalTitle}
               </h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
@@ -1133,7 +1133,7 @@ export default function AnalysisSetupWizard({
             <button
               type="button"
               onClick={onClose}
-              className="self-start rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-purple-500/30 hover:text-white"
+              className="min-h-11 self-start rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-purple-500/30 hover:text-white"
             >
               {hasAnalysisStarted
                 ? t("analysisWizard.closeAndContinueShort", "Fechar sem cancelar")
@@ -1141,9 +1141,9 @@ export default function AnalysisSetupWizard({
             </button>
           </div>
 
-          <div className="mt-5 grid gap-3">
+          <div className="mt-4 grid gap-3 sm:mt-5">
             <ProgressBar value={hasAnalysisStarted ? workflowProgressValue : progressValue} />
-            <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-6">
+            <div className="analysis-wizard-step-rail -mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 sm:pb-0 xl:grid-cols-6">
               {wizardSteps.map((step, index) => {
                 const isCurrent = index === stepIndex;
                 const isDone = index < stepIndex;
@@ -1152,7 +1152,7 @@ export default function AnalysisSetupWizard({
                   <div
                     key={step.title}
                     className={[
-                      "rounded-2xl border px-3 py-2 text-xs transition",
+                      "min-w-[9.5rem] shrink-0 snap-start rounded-2xl border px-3 py-2 text-xs transition sm:min-w-0",
                       isCurrent
                         ? "border-purple-400/40 bg-purple-500/14 text-purple-100"
                         : isDone
@@ -1170,7 +1170,7 @@ export default function AnalysisSetupWizard({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-6 sm:px-8">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 pb-28 sm:px-8 sm:py-6 sm:pb-6">
           {(!hasAnalysisStarted && submissionState !== "idle" && submissionState !== "completed") || submissionError ? (
             <div
               className={[
@@ -1218,21 +1218,19 @@ export default function AnalysisSetupWizard({
 
           {hasAnalysisStarted ? renderStartedContent() : renderStepContent()}
 
-          {!hasAnalysisStarted && (samplePreviewLoading || samplePreviewError) ? (
+          {!hasAnalysisStarted && samplePreviewError ? (
             <div
               className={[
                 "mt-5 rounded-2xl border p-4 text-sm",
-                samplePreviewError
-                  ? "border-yellow-400/25 bg-yellow-400/10 text-yellow-100"
-                  : "border-purple-400/25 bg-purple-500/10 text-purple-100",
+                "border-yellow-400/25 bg-yellow-400/10 text-yellow-100",
               ].join(" ")}
             >
-              {samplePreviewError || t("analysisWizard.loadingMatchingGames")}
+              {samplePreviewError}
             </div>
           ) : null}
         </div>
 
-        <div className="border-t border-white/10 bg-[#0d1017] px-6 py-4 sm:px-8">
+        <div className="shrink-0 border-t border-white/10 bg-[#0d1017] px-4 py-3 sm:px-8 sm:py-4">
           {hasAnalysisStarted ? (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm leading-6 text-slate-400">
@@ -1244,31 +1242,28 @@ export default function AnalysisSetupWizard({
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-2xl border border-cyan-300/25 bg-cyan-300/[0.10] px-5 py-2.5 text-sm font-semibold text-cyan-100 transition hover:border-cyan-200/45 hover:bg-cyan-300/[0.15]"
+              className="min-h-11 rounded-2xl border border-cyan-300/25 bg-cyan-300/[0.10] px-5 py-2.5 text-sm font-semibold text-cyan-100 transition hover:border-cyan-200/45 hover:bg-cyan-300/[0.15]"
               >
                 {t("analysisWizard.closeAndContinueShort", "Fechar sem cancelar")}
               </button>
             </div>
           ) : (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-sm text-slate-400">
-              {samplePreviewLoading
-                ? t("analysisWizard.loadingSample")
-                : t("analysisWizard.availableSample")}
-              :{" "}
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-sm text-slate-400 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
+              <span>{t("analysisWizard.sampleSummary", "Amostra do lote")}:</span>
               <span className="font-semibold text-white">
                 {samplePreview.selectedGamesCount} {t("analysisWizard.games")}
               </span>
-              {" · "}
+              <span className="text-slate-600">·</span>
               <span className="font-semibold text-white">{samplePreview.estimatedLabel}</span>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center">
               <button
                 type="button"
                 onClick={() => setStepIndex((current) => Math.max(0, current - 1))}
                 disabled={stepIndex === 0 || isSubmitting}
-                className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:border-purple-500/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                className="min-h-12 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:border-purple-500/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {t("analysisWizard.back")}
               </button>
@@ -1278,7 +1273,7 @@ export default function AnalysisSetupWizard({
                   type="button"
                   onClick={() => setStepIndex((current) => current + 1)}
                   disabled={!canContinue || isSubmitting}
-                  className="rounded-2xl bg-purple-500 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_16px_36px_rgba(88,28,135,0.45)] transition hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="min-h-12 rounded-2xl bg-purple-500 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_16px_36px_rgba(88,28,135,0.45)] transition hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {t("analysisWizard.next")}
                 </button>
@@ -1287,7 +1282,7 @@ export default function AnalysisSetupWizard({
                   type="button"
                   onClick={handleConfirm}
                   disabled={isSubmitting}
-                  className="rounded-2xl bg-purple-500 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_16px_36px_rgba(88,28,135,0.45)] transition hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="min-h-12 rounded-2xl bg-purple-500 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_16px_36px_rgba(88,28,135,0.45)] transition hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isSubmitting ? t("analysisWizard.starting") : t("analysisWizard.confirm")}
                 </button>

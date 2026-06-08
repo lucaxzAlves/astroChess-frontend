@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Chess } from "chess.js";
 import { useLanguage } from "../../contexts/LanguageContext.jsx";
-import ReviewBoard from "../review/ReviewBoard";
+import ReviewBoard from "../review/ReviewBoard.js";
 import "../../styles/gameReview.css";
 
 const fallbackFen = "8/8/8/8/8/8/8/8 w - - 0 1";
@@ -346,9 +346,9 @@ export default function AcademyPracticeBoard({ puzzles = [] }) {
   };
 
   return (
-    <section className="rounded-[30px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.78),rgba(49,46,129,0.16),rgba(8,8,14,0.92))] p-4 sm:p-5">
+    <section className="academy-lesson-mobile-card rounded-[30px] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,0.78),rgba(49,46,129,0.16),rgba(8,8,14,0.92))] p-3 sm:p-5">
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_24rem]">
-        <div className="rounded-[28px] border border-white/10 bg-slate-950/35 p-4">
+        <div className="min-w-0 rounded-[28px] border border-white/10 bg-slate-950/35 p-3 sm:p-4">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200/80">
@@ -377,6 +377,9 @@ export default function AcademyPracticeBoard({ puzzles = [] }) {
             onMove={handleBoardMove}
             neutralHighlightedSquare={lastMoveSquare}
             disabled={isBoardLocked || feedback === "correct"}
+            maxBoardWidth={620}
+            shellMaxWidth={660}
+            viewportHeightRatio={0.58}
           />
         </div>
 

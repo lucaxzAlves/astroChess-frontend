@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import LessonView from "../components/academy/LessonView.jsx";
-import ReviewBoard from "../components/review/ReviewBoard";
+import ReviewBoard from "../components/review/ReviewBoard.js";
 import { useLanguage } from "../contexts/LanguageContext.jsx";
 import { academyAdminApi } from "../services/academyAdminApi.js";
 import "../styles/gameReview.css";

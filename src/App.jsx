@@ -4,11 +4,11 @@ import AICoach from "./pages/AICoach.jsx";
 import AcademyAdmin from "./pages/AcademyAdmin.jsx";
 import Analysis from "./pages/Analysis.jsx";
 import Calendar from "./pages/Calendar.jsx";
-import { useAuth } from "./contexts/AuthContext";
-import GameReviewPage from "./pages/GameReviewPage";
+import { useAuth } from "./contexts/AuthContext.js";
+import GameReviewPage from "./pages/GameReviewPage.js";
 import Games from "./pages/Games.jsx";
 import Home from "./pages/Home.jsx";
-import LoginPage from "./pages/LoginPage";
+import LoginPage from "./pages/LoginPage.js";
 import MasterReplayAdmin from "./pages/MasterReplayAdmin.jsx";
 import OpeningsPage from "./pages/OpeningsPage.jsx";
 import Practice from "./pages/Practice.jsx";
@@ -17,7 +17,11 @@ import {
   extractChessComUsername,
   getMyPlayerProfile,
   updateMyChessComUsername,
-} from "./services/playerProfile.service";
+} from "./services/playerProfile.service.js";
+import {
+  getAnalysisBatchStatus,
+  triggerAnalysisBatchProfileUpdate,
+} from "./services/batchAnalysisApi.js";
 import {
   getArchiveGames,
   getPlayerArchives,
@@ -31,6 +35,131 @@ import { getUserFriendlyError } from "./utils/userFriendlyErrors.js";
 
 const GAMES_ARCHIVES_PER_LOAD = 3;
 const MIN_GAMES_PER_LOAD = 20;
+const GLOBAL_ANALYSIS_POLL_INTERVAL_MS = 6000;
+
+const globalAnalysisActiveStates = new Set([
+  "preparing",
+  "sending",
+  "analyzing",
+  "waiting",
+]);
+
+function getGlobalAnalysisProgress(flow = {}) {
+  if (flow.state === "completed") return 100;
+  if (flow.state === "failed") return 100;
+  if (flow.state === "waiting") return 92;
+  if (flow.state === "sending") return 28;
+  if (flow.state === "preparing") return 16;
+
+  const processed = Number(flow.processedGames || 0);
+  const total = Number(flow.totalGames || 0);
+  if (flow.state === "analyzing" && total > 0) {
+    return Math.max(35, Math.min(86, Math.round((processed / total) * 70) + 16));
+  }
+
+  if (flow.state === "analyzing") return 62;
+  return 0;
+}
+
+function getGlobalBatchMessage(statusPayload = {}) {
+  const status = statusPayload?.status;
+  const profileStatus = statusPayload?.profileUpdate?.status;
+  const processed = statusPayload?.processedGames || 0;
+  const total = statusPayload?.totalGames || 0;
+
+  if (status === "pending") return "Lote aguardando início...";
+  if (status === "processing") {
+    return total ? `Analisando partidas ${processed}/${total}...` : "Analisando partidas...";
+  }
+  if (status === "awaiting_profile_update") return "Preparando atualização do perfil...";
+  if (status === "profile_update_processing" || profileStatus === "processing") {
+    return "Criando seu perfil de jogador...";
+  }
+  if (status === "completed" || status === "completed_with_errors") {
+    return "Finalizando perfil de jogador...";
+  }
+  if (status === "profile_updated" || profileStatus === "completed") {
+    return "Seu perfil de xadrez está pronto.";
+  }
+  return "Análise do perfil em andamento...";
+}
+
+function GlobalAnalysisToast({ flow, onDismiss, onOpenCoach }) {
+  if (!flow?.visible) return null;
+
+  const isCompleted = flow.state === "completed";
+  const isFailed = flow.state === "failed";
+  const progress = getGlobalAnalysisProgress(flow);
+
+  return (
+    <div className="fixed bottom-[5.75rem] left-3 right-3 z-[90] sm:bottom-5 sm:left-auto sm:right-5 sm:w-[360px]">
+      <div
+        className={[
+          "overflow-hidden rounded-[24px] border bg-[linear-gradient(145deg,rgba(15,23,42,0.96),rgba(8,8,14,0.98))] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.42)] backdrop-blur-xl",
+          isFailed
+            ? "border-rose-300/30"
+            : isCompleted
+              ? "border-emerald-300/30"
+              : "border-purple-300/28",
+        ].join(" ")}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-200">
+              Análise geral
+            </p>
+            <h3 className="mt-1 text-sm font-semibold text-white">
+              {isCompleted
+                ? "Perfil atualizado"
+                : isFailed
+                  ? "Análise interrompida"
+                  : "Análise em andamento"}
+            </h3>
+            <p className="mt-1 text-xs leading-5 text-slate-400">
+              {flow.message || "O processamento continuará mesmo fora da aba AI Coach."}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-400 transition hover:text-white"
+            aria-label="Fechar notificação"
+          >
+            ×
+          </button>
+        </div>
+
+        {!isCompleted && !isFailed ? (
+          <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-purple-400 via-fuchsia-300 to-cyan-300 transition-[width] duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        ) : null}
+
+        <div className="mt-4 flex gap-2">
+          <button
+            type="button"
+            onClick={onOpenCoach}
+            className="min-h-10 flex-1 rounded-2xl border border-purple-300/25 bg-purple-300/10 px-3 py-2 text-xs font-bold text-purple-100 transition hover:border-purple-200/50"
+          >
+            Abrir AI Coach
+          </button>
+          {isCompleted || isFailed ? (
+            <button
+              type="button"
+              onClick={onDismiss}
+              className="min-h-10 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-bold text-slate-300"
+            >
+              OK
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const pages = {
   Home,
@@ -56,11 +185,24 @@ const itemToPath = {
   Calendar: "/calendar",
 };
 
+const practiceExperiencePaths = {
+  academy: "/practice/academy",
+  "master-replay": "/practice/master-replay",
+  "pattern-forge": "/practice/pattern-forge",
+};
+
+function pathToPracticeExperience(pathname) {
+  if (pathname === "/practice/academy") return "academy";
+  if (pathname === "/practice/master-replay") return "master-replay";
+  if (pathname === "/practice/pattern-forge") return "pattern-forge";
+  return "";
+}
+
 function pathToItem(pathname) {
   if (pathname === "/games") return "Games";
   if (pathname === "/openings") return "Openings";
   if (pathname === "/analysis") return "Analysis";
-  if (pathname === "/practice") return "Practice";
+  if (pathname === "/practice" || pathname.startsWith("/practice/")) return "Practice";
   if (pathname === "/academy-admin") return "Academy Admin";
   if (pathname === "/master-replay-admin") return "Master Replay Admin";
   if (pathname === "/ai-coach") return "AI Coach";
@@ -73,6 +215,9 @@ export default function App() {
   const { isAuthenticated, loading: authLoading, logout, user } = useAuth();
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [activeItem, setActiveItem] = useState(() => pathToItem(window.location.pathname));
+  const [activePracticeExperience, setActivePracticeExperience] = useState(() =>
+    pathToPracticeExperience(window.location.pathname)
+  );
   const [selectedReviewGame, setSelectedReviewGame] = useState(null);
   const [connectedUsername, setConnectedUsername] = useState("");
   const [savedChessUsername, setSavedChessUsername] = useState("");
@@ -89,7 +234,15 @@ export default function App() {
   const [connectSuccess, setConnectSuccess] = useState("");
   const [isLoadingGames, setIsLoadingGames] = useState(false);
   const [gamesError, setGamesError] = useState("");
+  const [globalAnalysisFlow, setGlobalAnalysisFlow] = useState({
+    state: "idle",
+    message: "",
+    error: "",
+    batchId: "",
+    visible: false,
+  });
   const profileBootstrapRef = useRef(false);
+  const globalProfileUpdateTriggeredRef = useRef(new Set());
 
   const isReviewRoute = /^\/review\/[^/]+$/.test(currentPath);
   const isLoginRoute = currentPath === "/login";
@@ -109,20 +262,40 @@ export default function App() {
       const path = window.location.pathname;
       setCurrentPath(path);
       setActiveItem(pathToItem(path));
+      setActivePracticeExperience(pathToPracticeExperience(path));
     };
 
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  const handleActiveItemChange = useCallback((item) => {
+  const handleActiveItemChange = useCallback((item, options = {}) => {
     setActiveItem(item);
-    const nextPath = itemToPath[item] || "/";
+    const nextPracticeExperience = item === "Practice" ? options.practiceExperience || "" : "";
+    setActivePracticeExperience(nextPracticeExperience);
+    const nextPath =
+      item === "Practice" && nextPracticeExperience
+        ? practiceExperiencePaths[nextPracticeExperience] || "/practice"
+        : itemToPath[item] || "/";
     if (window.location.pathname !== nextPath) {
       window.history.pushState({}, "", nextPath);
     }
     setCurrentPath(nextPath);
   }, []);
+
+  const handlePracticeExperienceChange = useCallback((experience = "") => {
+    setActivePracticeExperience(experience);
+    if (activeItem !== "Practice") return;
+
+    const nextPath = experience
+      ? practiceExperiencePaths[experience] || "/practice"
+      : "/practice";
+
+    if (window.location.pathname !== nextPath) {
+      window.history.pushState({}, "", nextPath);
+    }
+    setCurrentPath(nextPath);
+  }, [activeItem]);
 
   const redirectToLogin = useCallback(() => {
     window.history.pushState({}, "", "/login");
@@ -143,6 +316,28 @@ export default function App() {
     setConnectError("");
     setConnectSuccess("");
     setGamesError("");
+  }, []);
+
+  const handleGlobalAnalysisFlowChange = useCallback((flow = {}) => {
+    const nextState = flow.state || "idle";
+    const shouldShow =
+      globalAnalysisActiveStates.has(nextState) ||
+      nextState === "completed" ||
+      nextState === "failed";
+
+    setGlobalAnalysisFlow((current) => ({
+      ...current,
+      ...flow,
+      state: nextState,
+      visible: shouldShow ? true : current.visible && nextState !== "idle",
+    }));
+  }, []);
+
+  const dismissGlobalAnalysisFlow = useCallback(() => {
+    setGlobalAnalysisFlow((current) => ({
+      ...current,
+      visible: false,
+    }));
   }, []);
 
   const handleProtectedRequestError = useCallback(async (error) => {
@@ -192,6 +387,123 @@ export default function App() {
     },
     [handleProtectedRequestError, isAuthenticated]
   );
+
+  useEffect(() => {
+    const batchId = globalAnalysisFlow.batchId;
+    const shouldPoll =
+      isAuthenticated &&
+      batchId &&
+      globalAnalysisActiveStates.has(globalAnalysisFlow.state);
+
+    if (!shouldPoll) return undefined;
+
+    let cancelled = false;
+
+    const poll = async () => {
+      try {
+        const statusPayload = await getAnalysisBatchStatus({
+          userId: authenticatedUserId,
+          batchId,
+        });
+        if (cancelled) return;
+
+        const batchStatus = statusPayload?.status;
+        const profileStatus = statusPayload?.profileUpdate?.status;
+        const shouldTriggerProfileUpdate =
+          activeItem !== "AI Coach" &&
+          !globalProfileUpdateTriggeredRef.current.has(batchId) &&
+          (batchStatus === "awaiting_profile_update" ||
+            profileStatus === "skipped" ||
+            ((batchStatus === "completed" || batchStatus === "completed_with_errors") &&
+              profileStatus !== "completed"));
+
+        if (shouldTriggerProfileUpdate) {
+          globalProfileUpdateTriggeredRef.current.add(batchId);
+          setGlobalAnalysisFlow((current) => ({
+            ...current,
+            state: "analyzing",
+            message: "Criando seu perfil de jogador...",
+            batchId,
+            visible: true,
+          }));
+
+          await triggerAnalysisBatchProfileUpdate({
+            userId: authenticatedUserId,
+            batchId,
+          });
+          return;
+        }
+
+        if (batchStatus === "profile_updated" || profileStatus === "completed") {
+          await refreshAnalysisProfile({ silent: true });
+          if (cancelled) return;
+
+          setGlobalAnalysisFlow((current) => ({
+            ...current,
+            state: "completed",
+            message: "Seu perfil de xadrez está pronto.",
+            error: "",
+            batchId,
+            visible: true,
+            processedGames: statusPayload?.processedGames,
+            totalGames: statusPayload?.totalGames,
+          }));
+          return;
+        }
+
+        if (
+          batchStatus === "failed" ||
+          batchStatus === "profile_update_failed" ||
+          profileStatus === "failed"
+        ) {
+          setGlobalAnalysisFlow((current) => ({
+            ...current,
+            state: "failed",
+            message: "A análise do perfil falhou.",
+            error:
+              statusPayload?.profileUpdate?.error ||
+              statusPayload?.errors?.[0]?.message ||
+              "Não foi possível concluir a análise do perfil.",
+            batchId,
+            visible: true,
+          }));
+          return;
+        }
+
+        setGlobalAnalysisFlow((current) => ({
+          ...current,
+          state: "analyzing",
+          message: getGlobalBatchMessage(statusPayload),
+          error: "",
+          batchId,
+          visible: true,
+          processedGames: statusPayload?.processedGames,
+          totalGames: statusPayload?.totalGames,
+        }));
+      } catch (error) {
+        if (cancelled) return;
+        setGlobalAnalysisFlow((current) => ({
+          ...current,
+          message: current.message || "Acompanhando análise em segundo plano...",
+        }));
+      }
+    };
+
+    void poll();
+    const interval = window.setInterval(poll, GLOBAL_ANALYSIS_POLL_INTERVAL_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [
+    authenticatedUserId,
+    activeItem,
+    globalAnalysisFlow.batchId,
+    globalAnalysisFlow.state,
+    isAuthenticated,
+    refreshAnalysisProfile,
+  ]);
 
   const loadChessComAccountData = useCallback(async (username, options = {}) => {
     const cleanUsername = username.trim();
@@ -277,6 +589,17 @@ export default function App() {
       setIsConnecting(false);
     }
   }, [handleProtectedRequestError, loadChessComAccountData]);
+
+  const handleLogout = useCallback(async () => {
+    if (!isAuthenticated) {
+      redirectToLogin();
+      return;
+    }
+
+    resetChessComState();
+    await logout();
+    redirectToLogin();
+  }, [isAuthenticated, logout, redirectToLogin, resetChessComState]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -624,6 +947,7 @@ export default function App() {
           onRefreshProfile={refreshAnalysisProfile}
           onEnsureGamesLoaded={ensurePlayerGamesLoadedForAnalysis}
           onOpenAnalysis={() => handleActiveItemChange("Analysis")}
+          onAnalysisFlowChange={handleGlobalAnalysisFlowChange}
         />
       );
     }
@@ -633,6 +957,8 @@ export default function App() {
         <Practice
           connectedUsername={connectedUsername}
           playerProfile={normalizedAnalysisProfile}
+          initialExperience={activePracticeExperience}
+          onExperienceChange={handlePracticeExperienceChange}
         />
       );
     }
@@ -646,13 +972,27 @@ export default function App() {
   }
 
   return (
+    <>
     <MainLayout
       activeItem={activeItem}
+      activePracticeExperience={activePracticeExperience}
       onActiveItemChange={handleActiveItemChange}
       fullBleed={isReviewRoute}
       chessComAvatar={playerProfile?.avatar || ""}
+      connectedUsername={savedChessUsername || connectedUsername}
+      isConnectingChessCom={isConnecting}
+      connectError={connectError}
+      connectSuccess={connectSuccess}
+      onConnectChessCom={connectChessComAccount}
+      onLogout={handleLogout}
     >
       {renderMainPage()}
     </MainLayout>
+      <GlobalAnalysisToast
+        flow={globalAnalysisFlow}
+        onDismiss={dismissGlobalAnalysisFlow}
+        onOpenCoach={() => handleActiveItemChange("AI Coach")}
+      />
+    </>
   );
 }

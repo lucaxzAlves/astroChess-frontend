@@ -7,7 +7,7 @@ import {
   getThemeTitle,
   mockForgePuzzles,
 } from "../../../data/mockPatternForge.js";
-import ReviewBoard from "../../review/ReviewBoard";
+import ReviewBoard from "../../review/ReviewBoard.js";
 import ForgeRightPanel from "./ForgeRightPanel.jsx";
 import "../../../styles/gameReview.css";
 
@@ -32,6 +32,11 @@ function buildCompletedPuzzleCountMap(todaySession) {
 }
 
 function getFirstPendingPuzzleIndex(sessionPuzzles = [], todaySession) {
+  const backendIndex = Number(todaySession?.currentPuzzleIndex);
+  if (Number.isInteger(backendIndex) && backendIndex >= 0) {
+    return Math.max(0, Math.min(backendIndex, Math.max(0, sessionPuzzles.length - 1)));
+  }
+
   const completedCounts = buildCompletedPuzzleCountMap(todaySession);
   const seenCounts = new Map();
 
@@ -184,6 +189,223 @@ function formatLineAsSan(fen, line = []) {
   return sanMoves.join(" ");
 }
 
+function MobileStatScroller({ items = [] }) {
+  return (
+    <div className="pattern-forge-mobile-scroll max-w-full min-w-0 overflow-x-auto overflow-y-hidden pb-1">
+      <div className="flex w-max max-w-none snap-x gap-3">
+        {items.map(([label, value, detail]) => (
+          <div
+            key={label}
+            className="w-[142px] shrink-0 snap-start rounded-3xl border border-white/10 bg-slate-950/50 p-4"
+          >
+            <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">{label}</p>
+            <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
+            {detail ? <p className="mt-1 text-xs leading-5 text-slate-500">{detail}</p> : null}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MobileCycleTimeline({ rounds = [], currentRound, currentDay, t }) {
+  const activeRound = rounds.find((round) => round.round === currentRound.round) || currentRound;
+  const activeRoundProgress = activeRound.targetDays
+    ? Math.min(100, Math.round((currentDay / activeRound.targetDays) * 100))
+    : 0;
+
+  return (
+    <section className="max-w-full min-w-0 overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.035] p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-rose-200">
+            {t("patternForge.compressionSchedule")}
+          </p>
+          <h2 className="mt-1 text-xl font-semibold text-white">
+            {t("patternForge.roundNumber", undefined, { round: activeRound.round })}
+          </h2>
+          <p className="mt-1 text-sm leading-5 text-slate-400">
+            {t("patternForge.scheduleCompactHint", "Same puzzle set, less time each round.")}
+          </p>
+        </div>
+        <span className="rounded-full border border-rose-300/25 bg-rose-300/10 px-3 py-1 text-xs font-semibold text-rose-100">
+          {activeRound.targetDays}d
+        </span>
+      </div>
+
+      <div className="mt-5 rounded-3xl border border-rose-300/15 bg-slate-950/45 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">
+              {t("patternForge.currentDay", "Current day")}
+            </p>
+            <p className="mt-1 text-2xl font-semibold text-white">
+              {currentDay}/{activeRound.targetDays || 1}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">
+              {t("patternForge.dailyWorkload", "Daily workload")}
+            </p>
+            <p className="mt-1 text-lg font-semibold text-rose-100">
+              {activeRound.dailyTarget || currentRound.dailyTarget || 0} {t("patternForge.perDayShort", "/dia")}
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-rose-300 via-purple-300 to-cyan-300"
+            style={{ width: `${activeRoundProgress}%` }}
+          />
+        </div>
+      </div>
+
+      <div className="pattern-forge-mobile-scroll mt-4 max-w-full min-w-0 overflow-x-auto overflow-y-hidden pb-1">
+        <div className="flex w-max max-w-none snap-x gap-3">
+          {rounds.map((round) => {
+            const isActive = round.round === activeRound.round;
+            const isPast = round.round < activeRound.round;
+            return (
+              <article
+                key={round.round}
+                className={[
+                  "w-[190px] shrink-0 snap-start rounded-3xl border p-4",
+                  isActive
+                    ? "border-rose-300/35 bg-rose-300/10"
+                    : isPast
+                      ? "border-emerald-300/20 bg-emerald-300/10"
+                      : "border-white/10 bg-slate-950/45",
+                ].join(" ")}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-white">
+                    {t("patternForge.roundNumber", undefined, { round: round.round })}
+                  </p>
+                  <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[11px] font-semibold text-slate-200">
+                    {round.targetDays}d
+                  </span>
+                </div>
+                <p className="mt-3 text-2xl font-semibold text-white">
+                  {round.dailyTarget || 0}
+                  <span className="ml-1 text-xs font-medium text-slate-400">
+                    {t("patternForge.puzzlesPerDayShort", "puzzles/day")}
+                  </span>
+                </p>
+                <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-400">
+                  {round.goal || t("patternForge.patternBuilding", "Pattern building")}
+                </p>
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MobileFeedbackCard({
+  feedback,
+  feedbackSelectedLineSan,
+  feedbackSolutionLineSan,
+  puzzle,
+  t,
+  language,
+  onNext,
+  onReviewLine,
+  onRepeatLater,
+  dailyGoalReached,
+}) {
+  if (!feedback) return null;
+
+  return (
+    <section
+      className={[
+        "rounded-[28px] border p-5 shadow-lg",
+        feedback.isCorrect
+          ? "border-emerald-300/30 bg-emerald-300/10 shadow-emerald-950/20"
+          : "border-rose-300/35 bg-rose-400/10 shadow-rose-950/25",
+      ].join(" ")}
+    >
+      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300">
+        {feedback.isCorrect ? t("patternForge.correctTitle") : t("patternForge.notQuiteTitle")}
+      </p>
+      <h2 className="mt-2 text-2xl font-semibold text-white">
+        {feedback.isCorrect ? "✓ Correct" : "✕ Incorrect"}
+      </h2>
+      <p className="mt-2 text-sm leading-6 text-slate-300">
+        {feedback.isCorrect
+          ? t("patternForge.patternRecognized", "Theme learned. Keep the recognition loop moving.")
+          : feedback.explanation || puzzle.explanation || t("patternForge.mistakeDetected")}
+      </p>
+
+      <details className="mt-4 rounded-2xl border border-white/10 bg-slate-950/40 p-4" open={!feedback.isCorrect}>
+        <summary className="min-h-11 cursor-pointer text-sm font-semibold text-white">
+          {t("patternForge.correctLine")}
+        </summary>
+        <div className="mt-3 grid gap-3">
+          {!feedback.isCorrect ? (
+            <div className="rounded-xl border border-rose-300/25 bg-rose-950/25 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-rose-200">
+                {t("patternForge.yourMove", "Your move")}
+              </p>
+              <p className="mt-1 break-words font-mono text-sm font-semibold text-white">
+                {feedbackSelectedLineSan || feedback.wrongMove || t("common.na")}
+              </p>
+            </div>
+          ) : null}
+          <div className="rounded-xl border border-emerald-300/25 bg-emerald-950/25 px-3 py-2">
+            <p className="text-[10px] uppercase tracking-[0.14em] text-emerald-200">
+              {t("patternForge.correctContinuation", "Correct continuation")}
+            </p>
+            <p className="mt-1 break-words font-mono text-sm font-semibold text-emerald-100">
+              {feedbackSolutionLineSan || t("common.na")}
+            </p>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2">
+            <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500">
+              {t("patternForge.tacticalMotif", "Tactical motif")}
+            </p>
+            <p className="mt-1 text-sm font-semibold text-white">
+              {getThemeTitle(puzzle.theme, language)}
+            </p>
+          </div>
+        </div>
+      </details>
+
+      <div className="mt-4 grid gap-2">
+        {!dailyGoalReached ? (
+          <button
+            type="button"
+            onClick={onNext}
+            className={[
+              "min-h-[52px] rounded-2xl px-5 py-3 text-sm font-bold",
+              feedback.isCorrect ? "bg-emerald-300 text-slate-950" : "bg-rose-300 text-slate-950",
+            ].join(" ")}
+          >
+            {t("patternForge.nextPuzzle")}
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={onReviewLine}
+          className="min-h-12 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-slate-200"
+        >
+          {t("patternForge.reviewLineOnBoard")}
+        </button>
+        {!feedback.isCorrect ? (
+          <button
+            type="button"
+            onClick={onRepeatLater}
+            className="min-h-12 rounded-2xl border border-rose-300/20 bg-rose-300/10 px-4 py-3 text-sm font-semibold text-rose-100"
+          >
+            {t("patternForge.repeatLater")}
+          </button>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
 function normalizePuzzle(puzzle) {
   const rawSolution = puzzle?.solutionMoves || puzzle?.solution || puzzle?.solutionLine || [];
   const solution = (Array.isArray(rawSolution) ? rawSolution : String(rawSolution).split(/\s+/))
@@ -220,6 +442,7 @@ export default function PatternForgeTrainingBoard({
   onConfigureNew,
   onBackToPractice,
   todaySession,
+  calendarProgress,
   puzzles = [],
   themeReasons = [],
   onSubmitAttempt,
@@ -235,6 +458,7 @@ export default function PatternForgeTrainingBoard({
   const [isBoardLocked, setIsBoardLocked] = useState(false);
   const [lastMoveSquare, setLastMoveSquare] = useState(null);
   const [lastMoveLabel, setLastMoveLabel] = useState("");
+  const [boardOrientation, setBoardOrientation] = useState("white");
   const [currentSolutionIndex, setCurrentSolutionIndex] = useState(0);
   const [playedLine, setPlayedLine] = useState([]);
   const [feedback, setFeedback] = useState(null);
@@ -253,15 +477,26 @@ export default function PatternForgeTrainingBoard({
   const [startedAt] = useState(() => Date.now());
   const [puzzleStartedAt, setPuzzleStartedAt] = useState(() => Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [isMobileLayout, setIsMobileLayout] = useState(false);
   const audioContextRef = useRef(null);
 
   const currentRound = getCurrentRound(cycleDraft);
   const totalRounds = cycleDraft?.repetitionPlan?.rounds?.length || 1;
-  const dayProgress = cycleDraft?.progress?.currentDay || cycleDraft?.progress?.currentDayInRound || 1;
+  const dayProgress =
+    calendarProgress?.currentDay ||
+    cycleDraft?.progress?.currentDay ||
+    cycleDraft?.progress?.currentDayInRound ||
+    1;
   const completedTodayBase =
     todaySession?.completedPuzzleIds?.length || cycleDraft?.progress?.completedToday || 0;
   const completedInRoundBase = cycleDraft?.progress?.completedPuzzlesInRound || 0;
-  const dailyTarget = todaySession?.dailyTarget || currentRound.dailyTarget;
+  const dailyTarget =
+    todaySession?.dailyTarget ||
+    calendarProgress?.requiredDailyPace ||
+    currentRound.dailyTarget;
+  const originalDailyTarget = calendarProgress?.originalDailyTarget || currentRound.dailyTarget;
+  const daysRemaining = calendarProgress?.daysRemaining ?? Math.max(0, (currentRound.targetDays || 1) - dayProgress + 1);
+  const isBehindSchedule = Boolean(calendarProgress?.isBehindSchedule);
   const sessionTargetPuzzles = todaySession?.targetPuzzles || dailyTarget;
   const total = Math.max(1, puzzles.length || sessionTargetPuzzles - completedTodayBase);
   const patternSetSize = cycleDraft?.patternSet?.puzzleCount || 100;
@@ -344,6 +579,15 @@ export default function PatternForgeTrainingBoard({
   };
 
   useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const media = window.matchMedia("(max-width: 767px)");
+    const sync = () => setIsMobileLayout(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
+
+  useEffect(() => {
     const interval = window.setInterval(() => {
       setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
     }, 1000);
@@ -362,6 +606,7 @@ export default function PatternForgeTrainingBoard({
     setIsBoardLocked(false);
     setLastMoveSquare(null);
     setLastMoveLabel("");
+    setBoardOrientation(puzzle?.sideToMove || "white");
     setPuzzleStartedAt(Date.now());
   }, [puzzle?.sessionPuzzleId, puzzle?.fen]);
 
@@ -711,6 +956,304 @@ export default function PatternForgeTrainingBoard({
     ? formatLineAsSan(puzzle.fen, feedback.solutionMoves?.length ? feedback.solutionMoves : puzzle.solution || [])
     : "";
 
+  const resetCurrentPuzzlePosition = () => {
+    setBoardFen(puzzle?.fen || "8/8/8/8/8/8/8/8 w - - 0 1");
+    setCurrentSolutionIndex(0);
+    setPlayedLine([]);
+    setSelectedMove("");
+    setFeedback(null);
+    setIsAnswerRevealed(false);
+    setIsBoardLocked(false);
+    setLastMoveSquare(null);
+    setLastMoveLabel("");
+    setPuzzleStartedAt(Date.now());
+  };
+
+  if (isMobileLayout) {
+    const accuracy = sessionStats.attempted
+      ? Math.round((sessionStats.correct / sessionStats.attempted) * 100)
+      : 0;
+    const estimatedRemaining = remainingToday
+      ? `${Math.max(1, Math.round(remainingToday * 1.5))} min`
+      : t("patternForge.complete", "Complete");
+    const mobileStats = [
+      [t("patternForge.currentStreak", "Current streak"), sessionStats.currentStreak, `${t("patternForge.bestStreak", "Best streak")}: ${sessionStats.bestStreak}`],
+      [t("patternForge.accuracyToday", "Accuracy today"), `${accuracy}%`, `${sessionStats.correct}/${sessionStats.attempted || 0} ${t("patternForge.correct", "correct")}`],
+      [t("patternForge.mistakesQueued"), mistakesQueue.length, t("patternForge.mistakeReturn", "Mistake return")],
+      [t("patternForge.recognitionTimer", "Recognition timer"), elapsedSeconds < 60 ? `${elapsedSeconds}s` : `${Math.floor(elapsedSeconds / 60)}m`, t("patternForge.sessionTime", "Session time")],
+      [t("patternForge.remainingToday"), remainingToday, estimatedRemaining],
+      [t("patternForge.daysRemaining", "Days remaining"), daysRemaining, isBehindSchedule ? t("patternForge.behindSchedule", "Adjusted pace") : t("patternForge.onSchedule", "On schedule")],
+    ];
+
+    return (
+      <section className="mx-auto grid w-full max-w-[460px] min-w-0 gap-5 pb-28 md:hidden">
+        <header className="rounded-[30px] border border-rose-300/20 bg-[radial-gradient(circle_at_90%_0%,rgba(244,63,94,0.18),transparent_34%),linear-gradient(145deg,rgba(35,12,22,0.94),rgba(9,12,18,0.98))] p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-rose-200">
+                {t("patternForge.activeMultiDayCycle")}
+              </p>
+              <h1 className="mt-2 text-3xl font-semibold text-white">
+                {t("patternForge.roundNumber", undefined, { round: currentRound.round })}
+              </h1>
+              <p className="mt-1 text-sm text-slate-400">
+                {t("patternForge.dayProgress")} {dayProgress} / {currentRound.targetDays}
+              </p>
+              {isBehindSchedule ? (
+                <p className="mt-2 rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-xs font-semibold text-amber-100">
+                  {t("patternForge.adjustedTarget", "Meta ajustada")}: {dailyTarget}
+                </p>
+              ) : null}
+            </div>
+            <span className="rounded-full border border-purple-300/25 bg-purple-300/10 px-3 py-1 text-xs font-semibold text-purple-100">
+              {phase.label}
+            </span>
+          </div>
+          <div className="mt-5">
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <span className="font-semibold text-white">{cycleProgress}% Complete</span>
+              <span className="text-slate-400">{estimatedRemaining}</span>
+            </div>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-950/70">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-rose-300 via-purple-300 to-cyan-200"
+                style={{ width: `${cycleProgress}%` }}
+              />
+            </div>
+          </div>
+        </header>
+
+        <section className="rounded-[28px] border border-purple-300/18 bg-white/[0.035] p-5">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-100/80">
+            {t("patternForge.todaysTraining", "Today's training")}
+          </p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            {t("patternForge.puzzleProgress", undefined, {
+              current: currentPuzzleIndex + 1,
+              total,
+            })}
+          </h2>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-3">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">{t("patternForge.todaysTarget")}</p>
+              <p className="mt-1 text-xl font-semibold text-white">{dailyTarget}</p>
+              {dailyTarget !== originalDailyTarget ? (
+                <p className="mt-1 text-[11px] text-amber-100/80">
+                  {t("patternForge.originalTarget", "Original")}: {originalDailyTarget}
+                </p>
+              ) : null}
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-3">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">{t("patternForge.remainingToday")}</p>
+              <p className="mt-1 text-xl font-semibold text-white">{remainingToday}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => document.getElementById("pattern-forge-mobile-board")?.scrollIntoView({ behavior: "smooth" })}
+            className="mt-4 min-h-[52px] w-full rounded-2xl bg-gradient-to-r from-rose-400 via-purple-500 to-cyan-400 px-5 py-3 text-sm font-bold text-white shadow-[0_16px_38px_rgba(244,63,94,0.22)]"
+          >
+            {t("patternForge.startTodaysSession", "Start Today's Session")}
+          </button>
+        </section>
+
+        <main id="pattern-forge-mobile-board" className="grid gap-4">
+          <section
+            className={[
+              "pattern-forge-mobile-board rounded-[30px] border bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.08),transparent_40%),rgba(2,6,23,0.58)] p-2 transition-all duration-300",
+              boardEffectClasses[boardEffect] || boardEffectClasses.idle,
+            ].join(" ")}
+          >
+            <div className="mb-3 flex items-start justify-between gap-3 px-1">
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">
+                  {t(`patternForge.side.${puzzle.sideToMove}`, puzzle.sideToMove)}
+                </p>
+                <h2 className="mt-1 truncate text-xl font-semibold text-white">
+                  {getThemeTitle(puzzle.theme, language)}
+                </h2>
+              </div>
+              <span
+                className={[
+                  "shrink-0 rounded-full border px-3 py-1 text-[10px] font-bold",
+                  boardEffect === "wrong"
+                    ? "border-rose-300/35 bg-rose-300/12 text-rose-100"
+                    : boardEffect === "correct"
+                      ? "border-emerald-300/35 bg-emerald-300/12 text-emerald-100"
+                      : "border-purple-300/25 bg-purple-300/10 text-purple-100",
+                ].join(" ")}
+              >
+                {boardEffectLabel}
+              </span>
+            </div>
+
+            {puzzles.length ? (
+              <ReviewBoard
+                fen={boardFen || puzzle.fen}
+                orientation={boardOrientation}
+                onMove={handleBoardMove}
+                neutralHighlightedSquare={lastMoveSquare}
+                disabled={isAnswerRevealed || isSubmittingAttempt || isBoardLocked}
+                maxBoardWidth={470}
+                shellMaxWidth={490}
+                viewportHeightRatio={0.64}
+              />
+            ) : (
+              <div className="grid min-h-[280px] place-items-center rounded-[24px] border border-dashed border-rose-300/25 bg-slate-950/50 p-6 text-center">
+                <div>
+                  <h3 className="text-xl font-semibold text-white">{t("patternForge.noPuzzlesTitle")}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-400">{t("patternForge.noPuzzlesDescription")}</p>
+                </div>
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-[28px] border border-white/10 bg-slate-950/45 p-4">
+            <div className="flex flex-wrap gap-2">
+              <span className="rounded-full border border-rose-300/20 bg-rose-300/10 px-3 py-1 text-xs font-semibold text-rose-100">
+                {getThemeTitle(puzzle.theme, language)}
+              </span>
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-slate-300">
+                {puzzle.difficulty}
+              </span>
+              <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
+                {currentPuzzleIndex + 1}/{total}
+              </span>
+            </div>
+            <p className="mt-4 text-sm leading-6 text-slate-300">{puzzle.prompt}</p>
+            <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">
+                {t("patternForge.moveTrail", "Move trail")}
+              </p>
+              <p className="mt-2 min-h-6 break-words font-mono text-sm font-semibold text-white">
+                {playedLine.length ? playedLineSan : t("patternForge.dragMoveHint")}
+              </p>
+            </div>
+          </section>
+
+          <MobileFeedbackCard
+            feedback={feedback}
+            feedbackSelectedLineSan={feedbackSelectedLineSan}
+            feedbackSolutionLineSan={feedbackSolutionLineSan}
+            puzzle={puzzle}
+            t={t}
+            language={language}
+            onNext={() => goNext()}
+            onReviewLine={reviewLineOnBoard}
+            onRepeatLater={handleRepeatLater}
+            dailyGoalReached={shouldShowDailyGoalPrompt}
+          />
+
+          {shouldShowDailyGoalPrompt ? (
+            <section className="rounded-[28px] border border-purple-300/35 bg-purple-400/10 p-5 text-purple-50 shadow-lg shadow-purple-950/20">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-purple-200">
+                {t("patternForge.dailyGoalReached", "Meta diária atingida")}
+              </p>
+              <h3 className="mt-2 text-xl font-semibold text-white">
+                {t("patternForge.dailyGoalCongrats", "Great work. You hit today's Pattern Forge target.")}
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-purple-100/80">
+                {t("patternForge.dailyGoalChoice", "You can finish now or continue training.")}
+              </p>
+              <div className="mt-4 grid gap-2">
+                {canContinueAfterDailyGoal ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDailyGoalPromptDismissed(true);
+                      if (feedback) goNext();
+                    }}
+                    className="min-h-12 rounded-2xl bg-purple-300 px-4 py-3 text-sm font-bold text-slate-950"
+                  >
+                    {t("patternForge.keepTraining", "Keep training")}
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={finishToday}
+                  className="min-h-12 rounded-2xl border border-white/15 bg-white/[0.06] px-4 py-3 text-sm font-bold text-white"
+                >
+                  {t("patternForge.finishForToday")}
+                </button>
+              </div>
+            </section>
+          ) : null}
+        </main>
+
+        <section className="grid gap-4">
+          <h2 className="px-1 text-xl font-semibold text-white">{t("patternForge.trainingStats", "Training statistics")}</h2>
+          <MobileStatScroller items={mobileStats} />
+        </section>
+
+        <MobileCycleTimeline
+          rounds={cycleDraft.repetitionPlan.rounds}
+          currentRound={currentRound}
+          currentDay={dayProgress}
+          t={t}
+        />
+
+        <details className="rounded-[28px] border border-white/10 bg-white/[0.035] p-5">
+          <summary className="min-h-11 cursor-pointer text-lg font-semibold text-white">
+            {t("patternForge.configuration", "Configuration")}
+          </summary>
+          <div className="mt-4 grid gap-3">
+            <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+                {t("patternForge.patternSetCount", undefined, { count: patternSetSize })}
+              </p>
+              <p className="mt-2 text-sm text-slate-300">
+                {cycleDraft.patternSet?.themes?.map((theme) => getThemeTitle(theme, language)).join(" · ") || getThemeTitle(puzzle.theme, language)}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onConfigureNew}
+              className="min-h-12 rounded-2xl border border-rose-300/20 bg-rose-300/10 px-4 py-3 text-sm font-semibold text-rose-100"
+            >
+              {t("patternForge.configureNewCycle")}
+            </button>
+            <button
+              type="button"
+              onClick={onResetSetup}
+              className="min-h-12 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-slate-200"
+            >
+              {t("patternForge.resetCycleSetup")}
+            </button>
+            <button
+              type="button"
+              onClick={onBackToPractice}
+              className="min-h-12 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-slate-200"
+            >
+              {t("patternForge.backToPractice")}
+            </button>
+          </div>
+        </details>
+
+        <details className="rounded-[28px] border border-white/10 bg-white/[0.035] p-5">
+          <summary className="min-h-11 cursor-pointer text-lg font-semibold text-white">
+            {t("patternForge.history", "History")}
+          </summary>
+          <div className="mt-4 grid gap-3">
+            {attempts.length ? (
+              attempts.slice(-6).reverse().map((attempt, index) => (
+                <div key={`${attempt.puzzleId}-${index}`} className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
+                  <p className="text-sm font-semibold text-white">
+                    {attempt.isCorrect ? t("patternForge.correctTitle") : t("patternForge.notQuiteTitle")}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">{attempt.selectedMove || t("common.na")}</p>
+                </div>
+              ))
+            ) : (
+              <p className="rounded-2xl border border-white/10 bg-slate-950/45 p-4 text-sm text-slate-400">
+                {t("patternForge.noHistoryYet", "No previous attempts in this session yet.")}
+              </p>
+            )}
+          </div>
+        </details>
+      </section>
+    );
+  }
+
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       <div className="rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(35,12,22,0.94),rgba(9,12,18,0.98))] p-5 sm:p-6">
@@ -762,7 +1305,13 @@ export default function PatternForgeTrainingBoard({
         {[
           ["patternForge.currentRound", t("patternForge.roundOf", undefined, { current: currentRound.round, total: totalRounds })],
           ["patternForge.dayProgress", `${dayProgress} / ${currentRound.targetDays}`],
-          ["patternForge.todaysTarget", dailyTarget],
+          [
+            "patternForge.todaysTarget",
+            dailyTarget !== originalDailyTarget
+              ? `${dailyTarget} (${t("patternForge.originalTarget", "Original")}: ${originalDailyTarget})`
+              : dailyTarget,
+          ],
+          ["patternForge.daysRemaining", daysRemaining],
           ["patternForge.completedToday", todayCompleted],
           ["patternForge.forgeProgress", `${cycleProgress}%`],
           ["patternForge.currentPhase", phase.label],

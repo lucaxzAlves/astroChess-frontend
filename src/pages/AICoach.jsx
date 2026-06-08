@@ -11,8 +11,9 @@ import {
   EmptyState,
   ProgressBar,
   SectionHeading,
+  severityTone,
 } from "../components/profileDelta/ProfileDeltaUi.jsx";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/AuthContext.js";
 import { useLanguage } from "../contexts/LanguageContext.jsx";
 import {
   getAnalyzedGameIds,
@@ -26,7 +27,7 @@ import {
   getMyPlayerProfileVersions,
   restoreMyPlayerProfileVersion,
   updateMyPlayerProfilePreferences,
-} from "../services/playerProfile.service";
+} from "../services/playerProfile.service.js";
 import {
   buildAnalysisBatchGamesInput,
   buildSelectionPreview,
@@ -167,6 +168,14 @@ function titleizeKey(value = "") {
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .replace(/[_-]/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function getPracticeModeTone(mode = "") {
+  if (mode.includes("Pattern")) return "rose";
+  if (mode.includes("Personal")) return "yellow";
+  if (mode.includes("Academy")) return "purple";
+  if (mode.includes("Master")) return "emerald";
+  return "slate";
 }
 
 function getVersionStorageKey(userId) {
@@ -751,6 +760,580 @@ function CoachReadinessStrip({ profileData }) {
   );
 }
 
+function asCoachText(value, fallback = "Ainda não definido") {
+  if (value === null || value === undefined || value === "") return fallback;
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  if (Array.isArray(value)) {
+    return value.map((item) => asCoachText(item, "")).filter(Boolean).join(", ") || fallback;
+  }
+  if (typeof value === "object") {
+    return (
+      value.title ||
+      value.summary ||
+      value.description ||
+      value.reason ||
+      value.whyItMatters ||
+      value.whatHappens ||
+      fallback
+    );
+  }
+  return fallback;
+}
+
+function MobileSectionTitle({ eyebrow, title, description, action }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        {eyebrow ? (
+          <p className="text-[0.68rem] uppercase tracking-[0.2em] text-cyan-200/80">{eyebrow}</p>
+        ) : null}
+        <h2 className="mt-1 text-xl font-semibold tracking-tight text-white">{title}</h2>
+        {description ? <p className="mt-2 text-sm leading-6 text-slate-400">{description}</p> : null}
+      </div>
+      {action}
+    </div>
+  );
+}
+
+function MobileCoachHero({
+  coachIdentity,
+  coachOnboardingProfile,
+  plan,
+  hasRealProfile,
+  isViewingHistoricalProfile,
+  onStartAnalysis,
+}) {
+  const confidence = Number(plan?.confidence?.overall || plan?.currentFocus?.confidence || 0);
+  const progress = Number(plan?.progress?.estimatedPlanProgress || plan?.planStatus?.completion || 0);
+
+  return (
+    <Card className="border-purple-400/25 bg-[radial-gradient(circle_at_88%_0%,rgba(168,85,247,0.18),transparent_34%),radial-gradient(circle_at_18%_100%,rgba(34,211,238,0.10),transparent_30%),linear-gradient(145deg,rgba(24,16,40,0.96),rgba(10,12,22,0.98))] p-5">
+      <div>
+        <div className="flex items-start gap-4">
+          <div
+            className={`grid h-20 w-20 shrink-0 place-items-center rounded-[26px] bg-gradient-to-br ${coachIdentity.accent} text-2xl font-black text-slate-950 shadow-[0_18px_42px_rgba(0,0,0,0.34)]`}
+          >
+            {coachIdentity.name.split(" ")[1]?.slice(0, 2)?.toUpperCase() || "AI"}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap gap-2">
+              <Badge tone={hasRealProfile ? "emerald" : "yellow"}>
+                {hasRealProfile ? "Perfil ativo" : "Plano demo"}
+              </Badge>
+              {isViewingHistoricalProfile ? <Badge tone="purple">Versão histórica</Badge> : null}
+            </div>
+            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-white">{coachIdentity.name}</h1>
+            <p className="mt-1 text-sm leading-6 text-slate-300">{coachIdentity.specialization}</p>
+          </div>
+        </div>
+
+        <blockquote className="mt-5 rounded-3xl border border-white/10 bg-black/20 p-4 text-sm leading-6 text-slate-100">
+          "{coachIdentity.quote}"
+        </blockquote>
+
+        <div className="mt-5 grid gap-3">
+          <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Foco atual</p>
+            <p className="mt-2 text-base font-semibold text-white">{asCoachText(plan?.currentFocus?.title)}</p>
+            <p className="mt-2 text-sm leading-6 text-slate-400">{asCoachText(plan?.currentFocus?.reason)}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Tom</p>
+              <p className="mt-2 text-sm font-semibold text-white">
+                {labelMaps.coachTone[coachOnboardingProfile?.coachTone] || "Prático"}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Confiança</p>
+              <p className="mt-2 text-sm font-semibold text-white">{confidence || "Pendente"}{confidence ? "%" : ""}</p>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-purple-300/20 bg-purple-500/[0.08] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Progresso do plano</p>
+              <span className="text-sm font-semibold text-white">{progress}%</span>
+            </div>
+            <ProgressBar value={progress} className="mt-3" />
+          </div>
+          <button
+            type="button"
+            onClick={onStartAnalysis}
+            className="min-h-[52px] w-full rounded-2xl bg-gradient-to-r from-purple-500 via-fuchsia-500 to-cyan-400 px-5 py-3 text-sm font-bold text-white shadow-[0_18px_42px_rgba(168,85,247,0.34)] transition active:scale-[0.99]"
+          >
+            Iniciar análise do perfil
+          </button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function MobileCurrentMission({ plan, onStartAnalysis }) {
+  const progress = Number(plan?.progress?.estimatedPlanProgress || plan?.planStatus?.completion || 0);
+  return (
+    <Card className="border-cyan-300/20 bg-cyan-400/[0.055] p-5">
+      <MobileSectionTitle
+        eyebrow="Missão atual"
+        title={asCoachText(plan?.currentFocus?.title, "Criar foco de treino")}
+        description={asCoachText(plan?.currentFocus?.expectedBenefit || plan?.currentFocus?.reason)}
+      />
+      <div className="mt-5 grid gap-3">
+        <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm font-semibold text-white">Conclusão estimada</span>
+            <Badge tone="purple">{plan?.planStatus?.duration || "4 semanas"}</Badge>
+          </div>
+          <ProgressBar value={progress} className="mt-4" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
+            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Semana</p>
+            <p className="mt-2 text-sm font-semibold text-white">{plan?.planStatus?.currentWeek || "Semana 1"}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
+            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Carga diária</p>
+            <p className="mt-2 text-sm font-semibold text-white">{plan?.planStatus?.dailyMinutes || "25 min"}</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onStartAnalysis}
+          className="min-h-[48px] rounded-2xl bg-gradient-to-r from-purple-500 to-cyan-400 px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_36px_rgba(88,28,135,0.36)]"
+        >
+          Iniciar análise geral
+        </button>
+      </div>
+    </Card>
+  );
+}
+
+function MobileCoachGrowthBlockers({ blockers = [] }) {
+  const items = blockers.length ? blockers : [];
+  if (!items.length) {
+    return (
+      <Card className="p-5">
+        <MobileSectionTitle
+          eyebrow="Bloqueadores"
+          title="Ainda sem bloqueadores reais"
+          description="Analise mais partidas para o coach identificar o que está segurando sua evolução."
+        />
+      </Card>
+    );
+  }
+
+  return (
+    <section className="space-y-4">
+      <MobileSectionTitle
+        eyebrow="Bloqueadores"
+        title="O que está te segurando"
+        description="Cada cartão mostra uma prioridade prática para reparar primeiro."
+      />
+      {items.slice(0, 4).map((blocker, index) => (
+        <Card
+          key={`${blocker?.title || index}-${index}`}
+          className={[
+            "p-5",
+            index === 0 ? "border-rose-300/25 bg-rose-500/[0.07]" : "bg-white/[0.035]",
+          ].join(" ")}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Prioridade {index + 1}</p>
+              <h3 className="mt-2 text-lg font-semibold text-white">{asCoachText(blocker?.title, "Bloqueador")}</h3>
+            </div>
+            <Badge tone={severityTone(blocker?.severity)}>{blocker?.severity || "médio"}</Badge>
+          </div>
+          <p className="mt-4 text-sm leading-6 text-slate-300">
+            {asCoachText(blocker?.whatHappens || blocker?.description || blocker?.summary)}
+          </p>
+          <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Ação recomendada</p>
+            <p className="mt-2 text-sm leading-6 text-slate-200">
+              {asCoachText(blocker?.howToImprove || blocker?.recommendedAction || blocker?.estimatedImpactLabel)}
+            </p>
+          </div>
+        </Card>
+      ))}
+    </section>
+  );
+}
+
+function MobileTrainingPlan({ plan }) {
+  const tasks = plan?.trainingBlocks?.length ? plan.trainingBlocks : [];
+  const roadmap = plan?.weeklyRoadmap || [];
+  return (
+    <section className="space-y-4">
+      <MobileSectionTitle
+        eyebrow="Plano de treino"
+        title="Treino recomendado"
+        description="Blocos práticos conectados ao seu foco atual."
+        action={<Badge tone={plan?.isFallback ? "yellow" : "emerald"}>{plan?.sourceLabel}</Badge>}
+      />
+      <Card className="border-purple-300/20 bg-purple-500/[0.055] p-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge tone="purple">{plan?.phase?.name || "Fase atual"}</Badge>
+          <Badge tone="slate">{plan?.planStatus?.status || "Plano ativo"}</Badge>
+        </div>
+        <p className="mt-3 text-sm leading-6 text-slate-300">{asCoachText(plan?.phase?.description)}</p>
+      </Card>
+      {tasks.slice(0, 5).map((task) => (
+        <Card key={task.id || task.title} className="p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{asCoachText(task.category, "Treino")}</p>
+              <h3 className="mt-2 text-lg font-semibold text-white">{asCoachText(task.title)}</h3>
+            </div>
+            <Badge tone="purple">{task.duration || "25 min"}</Badge>
+          </div>
+          <p className="mt-3 text-sm leading-6 text-slate-300">{asCoachText(task.description)}</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Badge tone="slate">{task.frequency || "Semanal"}</Badge>
+            <Badge tone={severityTone(task.difficulty)}>{task.difficulty || "Adaptativo"}</Badge>
+            {(task.modes || []).map((mode) => (
+              <Badge key={mode} tone={getPracticeModeTone(mode)}>{mode}</Badge>
+            ))}
+          </div>
+          {task.evidence ? (
+            <p className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3 text-sm leading-6 text-slate-400">
+              {asCoachText(task.evidence)}
+            </p>
+          ) : null}
+        </Card>
+      ))}
+
+      {roadmap.length ? (
+        <Card className="p-5">
+          <MobileSectionTitle eyebrow="Timeline" title="Próximos marcos" />
+          <div className="mt-5 space-y-4">
+            {roadmap.slice(0, 4).map((week, index) => (
+              <div key={week.id || week.weekLabel} className="relative pl-8">
+                <div className="absolute left-2 top-1 h-full w-px bg-purple-400/20" />
+                <div className="absolute left-0 top-1 grid h-5 w-5 place-items-center rounded-full border border-purple-300/40 bg-slate-950 text-[10px] text-purple-100">
+                  {index + 1}
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge tone={week.status === "current" ? "purple" : "slate"}>{week.weekLabel}</Badge>
+                    <Badge tone={week.status === "completed" ? "emerald" : "slate"}>{week.status}</Badge>
+                  </div>
+                  <h4 className="mt-3 text-sm font-semibold text-white">{asCoachText(week.focus)}</h4>
+                  <p className="mt-2 text-sm leading-6 text-slate-400">{asCoachText(week.goal)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ) : null}
+    </section>
+  );
+}
+
+function MobileRecommendedActions({ plan, onOpenAnalysis, onStartAnalysis }) {
+  const prescription = plan?.todayPrescription || {};
+  const actions = [
+    {
+      title: prescription.task || "Executar prescrição do dia",
+      description: prescription.reason || "Comece pelo treino mais conectado ao seu foco atual.",
+      badge: prescription.mode || "Personal Replay",
+      onClick: onStartAnalysis,
+    },
+    {
+      title: "Abrir relatório de Análise",
+      description: "Veja o diagnóstico completo por trás do plano do coach.",
+      badge: "Análise",
+      onClick: onOpenAnalysis,
+    },
+    {
+      title: "Revisar checklist",
+      description: (prescription.checklist || []).slice(0, 2).join(" • ") || prescription.expectedGain,
+      badge: prescription.duration || "Hoje",
+      onClick: onStartAnalysis,
+    },
+  ];
+
+  return (
+    <section className="space-y-4">
+      <MobileSectionTitle eyebrow="Ações" title="O que fazer agora" />
+      {actions.map((action) => (
+        <button
+          key={action.title}
+          type="button"
+          onClick={action.onClick}
+          className="w-full rounded-[24px] border border-white/10 bg-slate-950/45 p-5 text-left transition active:scale-[0.99]"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="text-base font-semibold text-white">{action.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-400">{asCoachText(action.description)}</p>
+            </div>
+            <Badge tone="purple">{action.badge}</Badge>
+          </div>
+        </button>
+      ))}
+    </section>
+  );
+}
+
+function MobileCoachProgress({ plan }) {
+  const progress = plan?.progress || {};
+  const cards = [
+    ["Semana", `${progress.weeklyCompletion || 0}%`, "Conclusão semanal"],
+    ["Streak", `${progress.currentStreak || 0}`, "Dias consistentes"],
+    ["Sessões", `${progress.tasksCompleted || 0}`, "Tarefas concluídas"],
+    ["Consistência", `${progress.focusConsistency || 0}%`, "Foco no plano"],
+  ];
+
+  return (
+    <div className="mobile-coach-progress overflow-x-auto pb-1">
+      <div className="flex snap-x gap-3">
+        {cards.map(([label, value, detail]) => (
+          <div
+            key={label}
+            className="min-w-[150px] snap-start rounded-3xl border border-white/10 bg-slate-950/50 p-4"
+          >
+            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{label}</p>
+            <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">{detail}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MobileAnalysisHistory({ versions = [], loading, error, onRefreshVersions, onSelectVersion }) {
+  return (
+    <section className="space-y-4">
+      <MobileSectionTitle
+        eyebrow="Histórico"
+        title="Versões do perfil"
+        action={
+          <button
+            type="button"
+            onClick={onRefreshVersions}
+            className="min-h-[44px] rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-xs font-semibold text-slate-200"
+          >
+            Atualizar
+          </button>
+        }
+      />
+      {loading ? (
+        <Card className="p-5">
+          <p className="text-sm text-slate-300">Carregando versões...</p>
+          <ProgressBar value={62} className="mt-3" />
+        </Card>
+      ) : null}
+      {error ? (
+        <Card className="border-rose-400/20 bg-rose-500/10 p-5">
+          <p className="text-sm leading-6 text-rose-100">{error}</p>
+        </Card>
+      ) : null}
+      <div className="space-y-3">
+        <button
+          type="button"
+          onClick={() => onSelectVersion("current")}
+          className="min-h-[56px] w-full rounded-2xl border border-emerald-300/25 bg-emerald-400/[0.07] p-4 text-left"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm font-semibold text-white">Perfil principal atual</span>
+            <Badge tone="emerald">Ativo</Badge>
+          </div>
+        </button>
+        {versions.slice(0, 6).map((version) => (
+          <button
+            key={version.id}
+            type="button"
+            onClick={() => onSelectVersion(version.id)}
+            className="min-h-[64px] w-full rounded-2xl border border-white/10 bg-slate-950/45 p-4 text-left"
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone="purple">v{version.versionNumber}</Badge>
+              <Badge tone="slate">{getVersionSourceLabel(version.source)}</Badge>
+            </div>
+            <p className="mt-2 text-sm font-semibold text-white">{getVersionTitle(version)}</p>
+            <p className="mt-1 text-xs text-slate-500">{formatDate(version.createdAt)}</p>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function MobileCoachInsights({ plan, profileData, snapshotItems }) {
+  const [openInsight, setOpenInsight] = useState("confidence");
+  const confidence = plan?.confidence || profileData?.profileConfidence || {};
+  const insights = [
+    {
+      id: "confidence",
+      title: "Confiança do plano",
+      summary: `${confidence.overall || 0}% de confiança com base em ${confidence.basedOnGames || profileData?.meta?.totalGamesAnalyzed || 0} partidas.`,
+      detail: confidence.warning || "O plano fica mais preciso conforme novas partidas são analisadas.",
+    },
+    {
+      id: "profile",
+      title: "Snapshot do coach",
+      summary: snapshotItems.map(([label, value]) => `${label}: ${value}`).slice(0, 3).join(" • "),
+      detail: snapshotItems.map(([label, value]) => `${label}: ${value}`).join(" • "),
+    },
+    {
+      id: "next",
+      title: "Próxima revisão",
+      summary: plan?.planStatus?.nextReviewDate || "Após a próxima atualização do perfil.",
+      detail: "Reanalise novas partidas depois de alguns treinos para medir se os bloqueadores estão diminuindo.",
+    },
+  ];
+
+  return (
+    <section className="space-y-4">
+      <MobileSectionTitle eyebrow="Insights" title="Leitura do coach" />
+      {insights.map((insight) => {
+        const open = openInsight === insight.id;
+        return (
+          <Card key={insight.id} className="p-0">
+            <button
+              type="button"
+              onClick={() => setOpenInsight(open ? "" : insight.id)}
+              className="flex min-h-[60px] w-full items-center justify-between gap-4 p-5 text-left"
+            >
+              <div className="min-w-0">
+                <h3 className="text-base font-semibold text-white">{insight.title}</h3>
+                <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-400">{insight.summary}</p>
+              </div>
+              <span className={`text-lg text-purple-200 transition ${open ? "rotate-180" : ""}`}>⌄</span>
+            </button>
+            {open ? (
+              <div className="border-t border-white/10 px-5 pb-5">
+                <p className="pt-4 text-sm leading-6 text-slate-300">{insight.detail}</p>
+              </div>
+            ) : null}
+          </Card>
+        );
+      })}
+    </section>
+  );
+}
+
+function MobileAICoachExperience({
+  coachIdentity,
+  coachOnboardingProfile,
+  plan,
+  profileData,
+  hasRealProfile,
+  isViewingHistoricalProfile,
+  historicalProfileView,
+  analysisFlow,
+  draft,
+  success,
+  coachSetupError,
+  isSavingCoachPreferences,
+  versions,
+  profileVersionsLoading,
+  profileVersionsError,
+  selectedProfileVersionId,
+  isRestoringProfileVersion,
+  connectedUsername,
+  snapshotItems,
+  onStartAnalysis,
+  onOpenAnalysis,
+  onRefreshVersions,
+  onSelectVersion,
+  onRestoreVersion,
+  onResetQuiz,
+}) {
+  return (
+    <section className="mx-auto -mt-8 flex w-full max-w-md flex-col gap-5 px-3 pb-28 pt-0 md:hidden">
+      <MobileCoachHero
+        coachIdentity={coachIdentity}
+        coachOnboardingProfile={coachOnboardingProfile}
+        plan={plan}
+        hasRealProfile={hasRealProfile}
+        isViewingHistoricalProfile={isViewingHistoricalProfile}
+        onStartAnalysis={onStartAnalysis}
+      />
+      <RunStatusCard flow={analysisFlow} />
+      <DraftReadyCard draft={draft} success={success} onOpenAnalysis={onOpenAnalysis} />
+
+      {coachSetupError ? (
+        <Card className="border-yellow-400/20 bg-yellow-400/10 p-5">
+          <p className="text-sm font-medium text-yellow-200">Aviso das preferências do coach</p>
+          <p className="mt-2 text-sm leading-6 text-yellow-100/90">{coachSetupError}</p>
+        </Card>
+      ) : null}
+
+      {isSavingCoachPreferences ? (
+        <Card className="p-5">
+          <p className="text-sm font-medium text-purple-300">Salvando preferências do coach</p>
+          <ProgressBar value={72} className="mt-4" />
+        </Card>
+      ) : null}
+
+      <MobileCurrentMission plan={plan} onStartAnalysis={onStartAnalysis} />
+      <MobileCoachGrowthBlockers blockers={plan?.growthBlockers || profileData?.growthBlockers || []} />
+      <MobileTrainingPlan plan={plan} />
+      <MobileRecommendedActions plan={plan} onOpenAnalysis={onOpenAnalysis} onStartAnalysis={onStartAnalysis} />
+
+      <section className="space-y-4">
+        <MobileSectionTitle eyebrow="Progresso" title="Ritmo de treino" />
+        <MobileCoachProgress plan={plan} />
+      </section>
+
+      <MobileAnalysisHistory
+        versions={versions}
+        loading={profileVersionsLoading}
+        error={profileVersionsError}
+        onRefreshVersions={onRefreshVersions}
+        onSelectVersion={onSelectVersion}
+      />
+
+      <MobileCoachInsights plan={plan} profileData={profileData} snapshotItems={snapshotItems} />
+
+      <Card className="p-5">
+        <MobileSectionTitle
+          eyebrow="Configuração"
+          title="Coach e análise"
+          description={
+            connectedUsername
+              ? `Conta conectada: ${connectedUsername}`
+              : "Conecte sua conta Chess.com na Home antes de iniciar uma análise geral."
+          }
+        />
+        <div className="mt-4 grid gap-3">
+          <button
+            type="button"
+            onClick={onStartAnalysis}
+            className="min-h-[48px] rounded-2xl bg-purple-500 px-5 py-3 text-sm font-semibold text-white"
+          >
+            Iniciar análise
+          </button>
+          <button
+            type="button"
+            onClick={onResetQuiz}
+            className="min-h-[48px] rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-semibold text-slate-200"
+          >
+            Refazer perfil do coach
+          </button>
+          {isViewingHistoricalProfile ? (
+            <div className="grid gap-3">
+              <Badge tone="purple">
+                Visualizando versão {historicalProfileView?.versionNumber || "histórica"}
+              </Badge>
+              <button
+                type="button"
+                onClick={() => onRestoreVersion(selectedProfileVersionId)}
+                disabled={isRestoringProfileVersion}
+                className="min-h-[48px] rounded-2xl border border-purple-300/30 bg-purple-500/15 px-5 py-3 text-sm font-semibold text-purple-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isRestoringProfileVersion ? "Restaurando..." : "Tornar perfil principal"}
+              </button>
+            </div>
+          ) : null}
+        </div>
+      </Card>
+    </section>
+  );
+}
+
 export default function AICoach({
   connectedUsername = "",
   userId = "",
@@ -762,6 +1345,7 @@ export default function AICoach({
   onRefreshProfile,
   onEnsureGamesLoaded,
   onOpenAnalysis,
+  onAnalysisFlowChange,
 }) {
   const { logout } = useAuth();
   const { t } = useLanguage();
@@ -808,6 +1392,10 @@ export default function AICoach({
   const [coachSetupError, setCoachSetupError] = useState("");
   const [isSavingCoachPreferences, setIsSavingCoachPreferences] = useState(false);
   const [hasDismissedSavedQuiz, setHasDismissedSavedQuiz] = useState(false);
+
+  useEffect(() => {
+    onAnalysisFlowChange?.(analysisFlow);
+  }, [analysisFlow, onAnalysisFlowChange]);
 
   useEffect(() => {
     analyzedGameIdsRef.current = analyzedGameIds;
@@ -1401,7 +1989,40 @@ export default function AICoach({
 
   return (
     <>
-      <section className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+      <MobileAICoachExperience
+        coachIdentity={coachIdentity}
+        coachOnboardingProfile={coachOnboardingProfile}
+        plan={trainingPlanViewModel}
+        profileData={effectiveProfileData}
+        hasRealProfile={hasRealProfile}
+        isViewingHistoricalProfile={isViewingHistoricalProfile}
+        historicalProfileView={historicalProfileView}
+        analysisFlow={analysisFlow}
+        draft={generalAnalysisRequestDraft}
+        success={analysisSuccess}
+        coachSetupError={coachSetupError}
+        isSavingCoachPreferences={isSavingCoachPreferences}
+        versions={profileVersions}
+        profileVersionsLoading={profileVersionsLoading}
+        profileVersionsError={profileVersionsError}
+        selectedProfileVersionId={selectedProfileVersionId}
+        isRestoringProfileVersion={isRestoringProfileVersion}
+        connectedUsername={connectedUsername}
+        snapshotItems={snapshotItems}
+        onStartAnalysis={() => setIsAnalysisWizardOpen(true)}
+        onOpenAnalysis={onOpenAnalysis}
+        onRefreshVersions={loadProfileVersions}
+        onSelectVersion={selectProfileVersion}
+        onRestoreVersion={restoreProfileVersion}
+        onResetQuiz={() => {
+          setHasCompletedCoachQuiz(false);
+          setCoachOnboardingProfile(null);
+          setGeneralAnalysisRequestDraft(null);
+          setHasDismissedSavedQuiz(true);
+        }}
+      />
+
+      <section className="mx-auto hidden w-full max-w-7xl flex-col gap-6 md:flex">
         <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(18,12,32,0.94),rgba(12,14,22,0.98))] p-5 shadow-[0_28px_70px_rgba(0,0,0,0.32)] sm:p-7">
           <div className="absolute inset-0">
             <div className="absolute left-[-8%] top-[-20%] h-72 w-72 rounded-full bg-purple-500/18 blur-3xl" />

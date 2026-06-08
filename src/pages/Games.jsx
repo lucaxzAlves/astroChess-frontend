@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Chess } from "chess.js";
+import { useAuth } from "../contexts/AuthContext.js";
 import { useLanguage } from "../contexts/LanguageContext.jsx";
 import {
   extractMoveCountFromPgn,
@@ -18,6 +19,8 @@ const insights = [
 const timeControls = ["All", "Bullet", "Blitz", "Rapid", "Daily"];
 const results = ["All", "Wins", "Losses", "Draws"];
 const dateRanges = ["Last 7 days", "Last 30 days", "All time"];
+const colorFilters = ["All", "White", "Black", "Imported"];
+const sourceFilters = ["All", "Chess.com", "Imported"];
 
 function extractPgnHeader(pgn = "", header) {
   return String(pgn || "").match(new RegExp(`\\[${header} "([^"]*)"\\]`))?.[1] || "";
@@ -140,9 +143,20 @@ function parsePgnImport(rawText = "") {
   return { importedGames, errors };
 }
 
-function loadImportedGamesFromStorage() {
+function getImportedGamesStorageKey(user, connectedUsername = "") {
+  const userId =
+    user?.id ||
+    user?.userId ||
+    user?._id ||
+    user?.email ||
+    "";
+  const owner = userId || connectedUsername || "guest";
+  return `${IMPORTED_GAMES_STORAGE_KEY}:${String(owner).trim().toLowerCase()}`;
+}
+
+function loadImportedGamesFromStorage(storageKey) {
   try {
-    const storedGames = JSON.parse(localStorage.getItem(IMPORTED_GAMES_STORAGE_KEY) || "[]");
+    const storedGames = JSON.parse(localStorage.getItem(storageKey) || "[]");
     return Array.isArray(storedGames) ? storedGames : [];
   } catch {
     return [];
@@ -166,7 +180,7 @@ function SelectFilter({ label, value, onChange, options, getOptionLabel }) {
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="rounded-xl border border-white/10 bg-slate-950/80 px-3 py-3 text-sm text-slate-200 outline-none transition duration-200 focus:border-purple-500/60 focus:ring-4 focus:ring-purple-500/10"
+        className="games-filter-control rounded-xl px-3 py-3 text-sm outline-none transition duration-200"
       >
         {options.map((option) => (
           <option key={option}>{getOptionLabel ? getOptionLabel(option) : option}</option>
@@ -495,6 +509,220 @@ function getFilteredGameStats(games, t) {
   ];
 }
 
+function getAnalysisStatus(game) {
+  if (game.source === "PGN_IMPORT") return "Imported";
+  if (game.analysisStatus) return game.analysisStatus;
+  if (game.reviewed || game.hasReview || game.analyzed) return "Analyzed";
+  return "Ready";
+}
+
+function getStatusTone(status) {
+  const normalized = String(status || "").toLowerCase();
+  if (normalized.includes("analyzed") || normalized.includes("analis")) return "cyan";
+  if (normalized.includes("import")) return "purple";
+  return "slate";
+}
+
+function MobileStatsCarousel({ stats }) {
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      {stats.map((item) => (
+        <article
+          key={item.label}
+          className="min-w-0 rounded-[20px] border border-purple-300/18 bg-slate-950/55 p-3.5 shadow-[0_10px_24px_rgba(0,0,0,0.2)]"
+        >
+          <p className="truncate text-[10px] font-bold uppercase tracking-[0.13em] text-slate-500">{item.label}</p>
+          <p className="mt-2 truncate text-2xl font-semibold text-white">{item.value}</p>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function MobileFilterSelect({ label, value, onChange, options, getOptionLabel }) {
+  return (
+    <label className="grid gap-2 text-sm text-slate-300">
+      {label}
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="games-filter-control min-h-12 rounded-xl px-3 py-3 text-sm outline-none"
+      >
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {getOptionLabel ? getOptionLabel(option) : option}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function MobileFiltersPanel({
+  open,
+  timeControl,
+  setTimeControl,
+  result,
+  setResult,
+  dateRange,
+  setDateRange,
+  colorFilter,
+  setColorFilter,
+  sourceFilter,
+  setSourceFilter,
+  optionLabels,
+}) {
+  if (!open) return null;
+
+  return (
+    <Card className="p-4">
+      <div className="grid gap-4">
+        <MobileFilterSelect
+          label="Time Control"
+          value={timeControl}
+          onChange={setTimeControl}
+          options={timeControls}
+          getOptionLabel={(option) => optionLabels.timeControls[option] || option}
+        />
+        <MobileFilterSelect
+          label="Result"
+          value={result}
+          onChange={setResult}
+          options={results}
+          getOptionLabel={(option) => optionLabels.results[option] || option}
+        />
+        <MobileFilterSelect
+          label="Color"
+          value={colorFilter}
+          onChange={setColorFilter}
+          options={colorFilters}
+          getOptionLabel={(option) =>
+            option === "All" ? "All colors" : option === "Imported" ? "Imported" : option
+          }
+        />
+        <MobileFilterSelect
+          label="Date Range"
+          value={dateRange}
+          onChange={setDateRange}
+          options={dateRanges}
+          getOptionLabel={(option) => optionLabels.dateRanges[option] || option}
+        />
+        <MobileFilterSelect
+          label="Source"
+          value={sourceFilter}
+          onChange={setSourceFilter}
+          options={sourceFilters}
+          getOptionLabel={(option) => option}
+        />
+      </div>
+    </Card>
+  );
+}
+
+function MobileGameCard({ game, selected, onSelect, onReview }) {
+  const status = getAnalysisStatus(game);
+
+  return (
+    <article
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
+      className={[
+        "rounded-[24px] border bg-[linear-gradient(180deg,rgba(18,18,31,0.92),rgba(8,8,17,0.98))] p-4 shadow-[0_12px_30px_rgba(0,0,0,0.24)] transition active:scale-[0.99]",
+        selected ? "border-purple-300/45 shadow-[0_0_28px_rgba(168,85,247,0.12)]" : "border-purple-300/16",
+      ].join(" ")}
+      aria-pressed={selected}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="line-clamp-2 text-base font-semibold leading-6 text-white">
+            {game.whitePlayer && game.blackPlayer
+              ? `${game.whitePlayer} vs ${game.blackPlayer}`
+              : `vs ${game.opponent}`}
+          </h3>
+          <p className="mt-1 text-xs text-slate-500">{game.event || game.timeControl}</p>
+        </div>
+        <SourceBadge source={game.source} />
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <ResultBadge result={game.result} />
+        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs font-semibold text-slate-200">
+          {game.date}
+        </span>
+      </div>
+
+      <p className="mt-4 line-clamp-2 text-sm leading-6 text-slate-300" title={game.opening}>
+        {game.opening || "Abertura não detectada"}
+      </p>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <StatusBadge tone="cyan">
+          Accuracy {typeof game.accuracy === "number" ? `${Math.round(game.accuracy)}%` : "N/A"}
+        </StatusBadge>
+        <StatusBadge tone={getStatusTone(status)}>{status}</StatusBadge>
+      </div>
+
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          onReview();
+        }}
+        className="mt-4 min-h-12 w-full rounded-2xl border border-cyan-200/35 bg-gradient-to-r from-purple-500/24 to-cyan-400/18 px-4 py-3 text-sm font-semibold text-white shadow-[0_0_18px_rgba(34,211,238,0.12)] transition active:scale-[0.99]"
+      >
+        Review
+      </button>
+    </article>
+  );
+}
+
+function MobileImportSection({ open, onToggle, onImportGames }) {
+  return (
+    <section className="grid gap-3">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex min-h-14 w-full items-center justify-between rounded-[22px] border border-purple-300/18 bg-slate-950/55 px-4 py-3 text-left"
+        aria-expanded={open}
+      >
+        <span>
+          <span className="block text-sm font-semibold text-white">Import Games</span>
+          <span className="mt-1 block text-xs text-slate-500">PGN, torneios, aulas ou bases pessoais</span>
+        </span>
+        <span className={["text-xl text-purple-200 transition", open ? "rotate-45" : ""].join(" ")}>
+          +
+        </span>
+      </button>
+      {open ? <PgnImportCard onImportGames={onImportGames} /> : null}
+    </section>
+  );
+}
+
+function MobileEmptyState({ hasImportedGames, onOpenImport }) {
+  return (
+    <Card className="p-6 text-center">
+      <h2 className="text-xl font-semibold text-white">No games found.</h2>
+      <p className="mt-2 text-sm leading-6 text-slate-400">
+        Ajuste os filtros, importe um PGN ou conecte sua conta Chess.com para carregar o histórico.
+      </p>
+      <button
+        type="button"
+        onClick={onOpenImport}
+        className="astro-button-secondary mt-5 min-h-12 w-full rounded-2xl px-4 py-3 text-sm font-semibold"
+      >
+        {hasImportedGames ? "Ver importação" : "Import PGN"}
+      </button>
+    </Card>
+  );
+}
+
 function inDateRange(game, dateRange) {
   if (dateRange === "All time" || !game.timestamp) return true;
 
@@ -514,17 +742,37 @@ export default function Games({
   hasMoreGames,
   onReviewGame,
 }) {
+  const { user, isAuthenticated } = useAuth();
   const { t } = useLanguage();
   const [search, setSearch] = useState("");
   const [timeControl, setTimeControl] = useState("All");
   const [result, setResult] = useState("All");
   const [dateRange, setDateRange] = useState("All time");
+  const [colorFilter, setColorFilter] = useState("All");
+  const [sourceFilter, setSourceFilter] = useState("All");
   const [selectedGameId, setSelectedGameId] = useState(null);
-  const [importedGames, setImportedGames] = useState(loadImportedGamesFromStorage);
+  const importedGamesStorageKey = useMemo(
+    () => getImportedGamesStorageKey(isAuthenticated ? user : null, connectedUsername),
+    [connectedUsername, isAuthenticated, user]
+  );
+  const [importedGames, setImportedGames] = useState(() =>
+    loadImportedGamesFromStorage(importedGamesStorageKey)
+  );
+  const [importedGamesStorageHydrated, setImportedGamesStorageHydrated] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [mobileImportOpen, setMobileImportOpen] = useState(false);
+  const [mobileVisibleCount, setMobileVisibleCount] = useState(20);
 
   useEffect(() => {
-    localStorage.setItem(IMPORTED_GAMES_STORAGE_KEY, JSON.stringify(importedGames));
-  }, [importedGames]);
+    setImportedGamesStorageHydrated(false);
+    setImportedGames(loadImportedGamesFromStorage(importedGamesStorageKey));
+    setImportedGamesStorageHydrated(true);
+  }, [importedGamesStorageKey]);
+
+  useEffect(() => {
+    if (!importedGamesStorageHydrated) return;
+    localStorage.setItem(importedGamesStorageKey, JSON.stringify(importedGames));
+  }, [importedGames, importedGamesStorageHydrated, importedGamesStorageKey]);
 
   useEffect(() => {
     if (connectedUsername && playerGames.length === 0 && !isLoadingGames && !gamesError) {
@@ -562,10 +810,22 @@ export default function Games({
         result === "All" ||
         game.result === resultName ||
         (game.source === "PGN_IMPORT" && result === "All");
+      const matchesColor =
+        colorFilter === "All" ||
+        game.color === colorFilter ||
+        (game.source === "PGN_IMPORT" && colorFilter === "Imported");
+      const matchesSource =
+        sourceFilter === "All" ||
+        (sourceFilter === "Chess.com" && game.source !== "PGN_IMPORT") ||
+        (sourceFilter === "Imported" && game.source === "PGN_IMPORT");
 
-      return matchesSearch && matchesTime && matchesResult && inDateRange(game, dateRange);
+      return matchesSearch && matchesTime && matchesResult && matchesColor && matchesSource && inDateRange(game, dateRange);
     });
-  }, [allDisplayGames, dateRange, result, search, timeControl]);
+  }, [allDisplayGames, colorFilter, dateRange, result, search, sourceFilter, timeControl]);
+
+  useEffect(() => {
+    setMobileVisibleCount(20);
+  }, [colorFilter, dateRange, result, search, sourceFilter, timeControl]);
 
   const selectedGame =
     filteredGames.find((game) => game.id === selectedGameId) || filteredGames[0] || null;
@@ -593,6 +853,7 @@ export default function Games({
     [t]
   );
   const filteredGameStats = getFilteredGameStats(filteredGames, t);
+  const mobileVisibleGames = filteredGames.slice(0, mobileVisibleCount);
   const isInitialLoading = isLoadingGames && playerGames.length === 0;
   const translateColor = (color) =>
     color === "White" ? t("games.white") : color === "Black" ? t("games.black") : color;
@@ -621,6 +882,131 @@ export default function Games({
 
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+      <div className="grid gap-4 md:hidden">
+        <div className="-mx-1 rounded-[24px] border border-purple-300/18 bg-[#080813]/92 p-3 shadow-[0_14px_34px_rgba(0,0,0,0.26)] backdrop-blur">
+          <label className="block">
+            <span className="sr-only">{t("games.opponent")}</span>
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search openings, players, events..."
+              className="games-filter-control min-h-12 rounded-2xl px-4 py-3 text-base outline-none"
+            />
+          </label>
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => setMobileFiltersOpen((current) => !current)}
+              className="min-h-11 w-full rounded-2xl border border-purple-300/24 bg-purple-300/[0.08] px-4 py-2.5 text-sm font-semibold text-purple-100"
+              aria-expanded={mobileFiltersOpen}
+            >
+              Filters
+            </button>
+          </div>
+        </div>
+
+        <MobileStatsCarousel stats={filteredGameStats} />
+
+        <MobileFiltersPanel
+          open={mobileFiltersOpen}
+          timeControl={timeControl}
+          setTimeControl={setTimeControl}
+          result={result}
+          setResult={setResult}
+          dateRange={dateRange}
+          setDateRange={setDateRange}
+          colorFilter={colorFilter}
+          setColorFilter={setColorFilter}
+          sourceFilter={sourceFilter}
+          setSourceFilter={setSourceFilter}
+          optionLabels={optionLabels}
+        />
+
+        <MobileImportSection
+          open={mobileImportOpen}
+          onToggle={() => setMobileImportOpen((current) => !current)}
+          onImportGames={importGames}
+        />
+
+        {isInitialLoading ? (
+          <Card className="p-8 text-center text-sm text-slate-400">{t("games.loading")}</Card>
+        ) : null}
+
+        {gamesError ? (
+          <Card className="border-rose-500/25 bg-rose-500/10 p-5 text-sm text-rose-200">
+            {gamesError || "Não foi possível carregar as partidas agora."}
+          </Card>
+        ) : null}
+
+        {!isInitialLoading ? (
+          <section className="grid gap-3">
+            <div className="flex items-end justify-between gap-3 px-1">
+              <div>
+                <p className="astro-eyebrow">{t("games.recentGames")}</p>
+                <h2 className="mt-1 text-xl font-semibold text-white">
+                  {filteredGames.length} games
+                </h2>
+              </div>
+              <p className="text-xs text-slate-500">
+                {optionLabels.dateRanges[dateRange] || dateRange}
+              </p>
+            </div>
+
+            {mobileVisibleGames.length ? (
+              mobileVisibleGames.map((game) => (
+                <MobileGameCard
+                  key={game.id}
+                  game={game}
+                  selected={selectedGame?.id === game.id}
+                  onSelect={() => setSelectedGameId(game.id)}
+                  onReview={() => {
+                    setSelectedGameId(game.id);
+                    openGameReview(game);
+                  }}
+                />
+              ))
+            ) : (
+              <MobileEmptyState
+                hasImportedGames={importedGames.length > 0}
+                onOpenImport={() => setMobileImportOpen(true)}
+              />
+            )}
+
+            {filteredGames.length > mobileVisibleCount ? (
+              <button
+                type="button"
+                onClick={() => setMobileVisibleCount((current) => current + 20)}
+                className="min-h-12 w-full rounded-2xl border border-purple-300/24 bg-purple-300/[0.08] px-4 py-3 text-sm font-semibold text-purple-100"
+              >
+                Mostrar mais jogos carregados
+              </button>
+            ) : null}
+
+            {hasMoreGames ? (
+              <button
+                type="button"
+                onClick={onLoadGames}
+                disabled={isLoadingGames}
+                className="astro-button-primary min-h-12 w-full rounded-2xl px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isLoadingGames ? t("games.loadingMore") : t("games.loadMore")}
+              </button>
+            ) : null}
+          </section>
+        ) : null}
+
+        {!connectedUsername ? (
+          <Card className="p-5 text-center">
+            <h2 className="text-lg font-semibold text-white">Chess.com não conectado</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              {t("games.connectPrompt")} Você ainda pode revisar partidas importadas por PGN.
+            </p>
+          </Card>
+        ) : null}
+      </div>
+
+      <div className="hidden flex-col gap-6 md:flex">
       <div className="flex flex-col justify-between gap-4 rounded-2xl border border-white/10 bg-gradient-to-br from-purple-500/10 via-white/[0.04] to-transparent p-6 lg:flex-row lg:items-end">
         <div>
           <p className="text-sm font-medium text-purple-300">{t("games.history")}</p>
@@ -649,7 +1035,7 @@ export default function Games({
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder={t("games.searchOpponent")}
-              className="rounded-xl border border-white/10 bg-slate-950/80 px-4 py-3 text-sm text-white outline-none transition duration-200 placeholder:text-slate-600 focus:border-purple-500/60 focus:ring-4 focus:ring-purple-500/10"
+              className="games-filter-control rounded-xl px-4 py-3 text-sm outline-none transition duration-200"
             />
           </label>
 
@@ -953,6 +1339,7 @@ export default function Games({
           </div>
         </Card>
       ) : null}
+      </div>
     </section>
   );
 }
