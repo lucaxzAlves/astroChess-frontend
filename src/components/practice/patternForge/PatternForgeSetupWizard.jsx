@@ -89,8 +89,8 @@ function StepHeader({ step, title, description }) {
         </span>
       </div>
       <ForgeProgressBar value={progress} className="mt-3" />
-      <h2 className="mt-6 text-3xl font-semibold text-white">{title}</h2>
-      {description ? <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">{description}</p> : null}
+      <h2 className="mt-6 break-words text-3xl font-semibold leading-tight text-white">{title}</h2>
+      {description ? <p className="mt-2 max-w-3xl break-words text-sm leading-6 text-slate-400">{description}</p> : null}
     </div>
   );
 }
@@ -103,7 +103,7 @@ function ChoicePill({ label, selected, recommended, onClick }) {
       type="button"
       onClick={onClick}
       className={[
-        "rounded-2xl border px-4 py-3 text-sm font-semibold transition",
+        "min-w-0 rounded-2xl border px-4 py-3 text-sm font-semibold leading-5 transition",
         selected
           ? "border-rose-300 bg-rose-300 text-slate-950"
           : "border-white/10 bg-white/[0.04] text-slate-200 hover:border-rose-300/35",
@@ -125,15 +125,15 @@ function ToggleRow({ title, description, checked, onToggle }) {
       type="button"
       onClick={onToggle}
       className={[
-        "flex items-center justify-between gap-5 rounded-2xl border p-4 text-left transition",
+        "flex min-w-0 items-center justify-between gap-4 rounded-2xl border p-4 text-left transition",
         checked
           ? "border-rose-300/45 bg-rose-300/[0.08]"
           : "border-white/10 bg-white/[0.04] hover:border-rose-300/30",
       ].join(" ")}
     >
-      <span>
-        <span className="block font-semibold text-white">{title}</span>
-        <span className="mt-1 block text-sm leading-6 text-slate-400">{description}</span>
+      <span className="min-w-0">
+        <span className="block break-words font-semibold text-white">{title}</span>
+        <span className="mt-1 block break-words text-sm leading-6 text-slate-400">{description}</span>
       </span>
       <span
         className={[
@@ -154,9 +154,9 @@ function ToggleRow({ title, description, checked, onToggle }) {
 
 function OverviewMetric({ label, value }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
-      <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-white">{value}</p>
+    <div className="min-w-0 rounded-2xl border border-white/10 bg-slate-950/45 p-4">
+      <p className="break-words text-xs uppercase tracking-[0.1em] text-slate-500">{label}</p>
+      <p className="mt-1 break-words text-lg font-semibold leading-snug text-white">{value}</p>
     </div>
   );
 }
@@ -397,19 +397,19 @@ export default function PatternForgeSetupWizard({
             ].join(" ")}
           >
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div>
+              <div className="min-w-0">
                 <div className="flex flex-wrap gap-2">
-                  <span className="rounded-full border border-purple-300/25 bg-purple-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-purple-100">
+                  <span className="rounded-full border border-purple-300/25 bg-purple-300/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-purple-100">
                     {t("patternForge.recommended")}
                   </span>
-                  <span className="rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100">
+                  <span className="rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-cyan-100">
                     {t("patternForge.aiCoachBadge")}
                   </span>
                 </div>
-                <h3 className="mt-4 text-2xl font-semibold text-white">
+                <h3 className="mt-4 break-words text-2xl font-semibold leading-tight text-white">
                   {t("patternForge.automaticThemesTitle")}
                 </h3>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
+                <p className="mt-2 max-w-3xl break-words text-sm leading-6 text-slate-300">
                   {t("patternForge.automaticThemesDescription")}
                 </p>
               </div>
@@ -437,12 +437,12 @@ export default function PatternForgeSetupWizard({
                         const confidence = formatReasonConfidence(reason.confidence);
 
                         return (
-                          <div key={`${reason.theme}-${reason.sourceField}`} className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-                            <p className="font-semibold text-white">{getThemeTitle(reason.theme, language)}</p>
-                            <p className="mt-1 text-sm leading-5 text-slate-400">
+                          <div key={`${reason.theme}-${reason.sourceField}`} className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+                            <p className="break-words font-semibold text-white">{getThemeTitle(reason.theme, language)}</p>
+                            <p className="mt-1 break-words text-sm leading-5 text-slate-400">
                               {formatThemeReasonText(reason, language)}
                             </p>
-                            <p className="mt-2 text-xs text-purple-200">
+                            <p className="mt-2 break-words text-xs leading-5 text-purple-200">
                               {formatThemeReasonSource(reason.sourceField, language)}
                               {confidence ? ` · ${confidence}%` : ""}
                             </p>
@@ -466,7 +466,7 @@ export default function PatternForgeSetupWizard({
 
           <div>
             <h3 className="text-lg font-semibold text-white">{t("patternForge.additionalThemes")}</h3>
-            <p className="mt-1 text-sm text-slate-400">{t("patternForge.additionalThemesDescription")}</p>
+            <p className="mt-1 break-words text-sm leading-6 text-slate-400">{t("patternForge.additionalThemesDescription")}</p>
           </div>
           <div className="max-h-[32rem] overflow-y-auto overflow-x-hidden rounded-[28px] border border-white/10 bg-slate-950/30 p-3 pr-2 [scrollbar-width:thin] [scrollbar-color:rgba(251,113,133,0.45)_rgba(15,23,42,0.35)]">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -561,16 +561,16 @@ export default function PatternForgeSetupWizard({
             <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               {rounds.map((round) => (
                 <div key={round.round} className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-                  <p className="text-xs uppercase tracking-[0.16em] text-rose-200">
+                  <p className="break-words text-xs uppercase tracking-[0.1em] text-rose-200">
                     {t("patternForge.roundNumber", undefined, { round: round.round })}
                   </p>
-                  <p className="mt-2 text-lg font-semibold text-white">
+                  <p className="mt-2 break-words text-lg font-semibold leading-snug text-white">
                     {t("patternForge.scheduleLine", undefined, {
                       days: round.targetDays,
                       count: round.dailyTarget,
                     })}
                   </p>
-                  <p className="mt-2 text-sm leading-6 text-slate-400">{round.goal}</p>
+                  <p className="mt-2 break-words text-sm leading-6 text-slate-400">{round.goal}</p>
                 </div>
               ))}
             </div>

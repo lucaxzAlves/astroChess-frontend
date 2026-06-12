@@ -43,17 +43,17 @@ export default function ForgeRightPanel({
       : 0;
 
   return (
-    <aside className="rounded-[28px] border border-white/10 bg-white/[0.04] p-4 shadow-xl shadow-black/10 xl:max-h-[calc(100vh-112px)] xl:overflow-y-auto">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-rose-200">
+    <aside className="min-w-0 rounded-[28px] border border-white/10 bg-white/[0.04] p-4 shadow-xl shadow-black/10 xl:max-h-[calc(100vh-112px)] xl:overflow-y-auto">
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="break-words text-xs font-semibold uppercase tracking-[0.1em] text-rose-200">
             {t("patternForge.cycleStatus")}
           </p>
-          <h2 className="mt-2 text-xl font-semibold text-white">
+          <h2 className="mt-2 break-words text-xl font-semibold leading-tight text-white">
             {t("patternForge.puzzleProgress", undefined, { current: currentNumber, total })}
           </h2>
         </div>
-        <span className="rounded-full border border-purple-300/25 bg-purple-300/10 px-3 py-1 text-xs font-semibold text-purple-100">
+        <span className="max-w-full break-words rounded-full border border-purple-300/25 bg-purple-300/10 px-3 py-1 text-xs font-semibold leading-5 text-purple-100">
           {phase.label}
         </span>
       </div>
@@ -66,32 +66,32 @@ export default function ForgeRightPanel({
           ["patternForge.mistakesQueued", mistakesQueue.length],
           ["patternForge.remainingToday", remainingToday],
         ].map(([key, value]) => (
-          <div key={key} className="rounded-xl border border-white/10 bg-slate-950/45 p-3">
-            <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500">{t(key)}</p>
-            <p className="mt-1 text-lg font-semibold text-white">{value}</p>
+          <div key={key} className="min-w-0 rounded-xl border border-white/10 bg-slate-950/45 p-3">
+            <p className="break-words text-[11px] uppercase tracking-[0.08em] text-slate-500">{t(key)}</p>
+            <p className="mt-1 break-words text-lg font-semibold text-white">{value}</p>
           </div>
         ))}
       </div>
 
       <section className="mt-4 rounded-2xl border border-rose-200/20 bg-rose-200/[0.07] p-4">
-        <p className="text-xs uppercase tracking-[0.16em] text-rose-200">
+        <p className="break-words text-xs uppercase tracking-[0.1em] text-rose-200">
           {t("patternForge.todaysSession")}
         </p>
-        <h3 className="mt-2 text-lg font-semibold text-white">
+        <h3 className="mt-2 break-words text-lg font-semibold text-white">
           {t("patternForge.roundOf", undefined, { current: currentRound.round, total: totalRounds })}
         </h3>
         <div className="mt-3 grid gap-2">
           <div className="flex items-center justify-between text-sm text-slate-300">
-            <span>{t("patternForge.todaysTarget")}</span>
-            <span className="font-semibold text-white">{todaysTarget}</span>
+            <span className="min-w-0 break-words">{t("patternForge.todaysTarget")}</span>
+            <span className="shrink-0 font-semibold text-white">{todaysTarget}</span>
           </div>
           <div className="flex items-center justify-between text-sm text-slate-300">
-            <span>{t("patternForge.completedToday")}</span>
-            <span className="font-semibold text-white">{completedToday}</span>
+            <span className="min-w-0 break-words">{t("patternForge.completedToday")}</span>
+            <span className="shrink-0 font-semibold text-white">{completedToday}</span>
           </div>
           <div className="flex items-center justify-between text-sm text-slate-300">
-            <span>{t("patternForge.roundProgress")}</span>
-            <span className="font-semibold text-white">{roundProgress}%</span>
+            <span className="min-w-0 break-words">{t("patternForge.roundProgress")}</span>
+            <span className="shrink-0 font-semibold text-white">{roundProgress}%</span>
           </div>
         </div>
         <button
@@ -104,23 +104,23 @@ export default function ForgeRightPanel({
       </section>
 
       <section className="mt-4 rounded-2xl border border-white/10 bg-slate-950/35 p-4">
-        <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+        <p className="break-words text-xs uppercase tracking-[0.1em] text-slate-500">
           {t("patternForge.currentPuzzle")}
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <span className="rounded-full border border-rose-300/25 bg-rose-300/10 px-3 py-1 text-xs text-rose-100">
+          <span className="max-w-full break-words rounded-full border border-rose-300/25 bg-rose-300/10 px-3 py-1 text-xs leading-5 text-rose-100">
             {getThemeTitle(puzzle.theme, language)}
           </span>
-          <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-slate-300">
+          <span className="break-words rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs leading-5 text-slate-300">
             {t(`patternForge.difficulty.${puzzle.difficulty}`, puzzle.difficulty)}
           </span>
-          <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-slate-300">
+          <span className="break-words rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs leading-5 text-slate-300">
             {t(`patternForge.side.${puzzle.sideToMove}`, puzzle.sideToMove)}
           </span>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           {tags.map((tag) => (
-            <span key={tag} className="rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] text-slate-400">
+            <span key={tag} className="max-w-full break-words rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] leading-5 text-slate-400">
               {tag}
             </span>
           ))}
@@ -128,19 +128,19 @@ export default function ForgeRightPanel({
       </section>
 
       <section className="mt-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-purple-300">
+        <p className="break-words text-xs font-semibold uppercase tracking-[0.1em] text-purple-300">
           {t("patternForge.answerArea")}
         </p>
-        <h3 className="mt-2 text-lg font-semibold text-white">{t("patternForge.whatMove")}</h3>
-        <p className="mt-2 text-sm leading-6 text-slate-400">
+        <h3 className="mt-2 break-words text-lg font-semibold text-white">{t("patternForge.whatMove")}</h3>
+        <p className="mt-2 break-words text-sm leading-6 text-slate-400">
           {localizeForgeItem(puzzle, "prompt", language)}
         </p>
 
         <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/35 p-4">
-          <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+          <p className="break-words text-xs uppercase tracking-[0.1em] text-slate-500">
             {t("patternForge.playedLine")}
           </p>
-          <p className="mt-2 min-h-6 font-mono text-sm font-semibold text-white">
+          <p className="mt-2 min-h-6 break-words font-mono text-sm font-semibold leading-6 text-white">
             {playedLine.length ? playedLineSan : t("patternForge.dragMoveHint")}
           </p>
         </div>
@@ -174,28 +174,28 @@ export default function ForgeRightPanel({
               : "border-rose-300/35 bg-rose-400/[0.10] shadow-lg shadow-rose-950/20",
           ].join(" ")}
         >
-          <p className={`text-xs uppercase tracking-[0.16em] ${feedback.isCorrect ? "text-emerald-200" : "text-rose-200"}`}>
+          <p className={`break-words text-xs uppercase tracking-[0.1em] ${feedback.isCorrect ? "text-emerald-200" : "text-rose-200"}`}>
             {feedback.isCorrect ? t("patternForge.correctTitle") : t("patternForge.notQuiteTitle")}
           </p>
           <div className="mt-4 grid gap-3">
             <div className="rounded-xl border border-white/10 bg-slate-950/35 p-3">
-              <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+              <p className="break-words text-xs uppercase tracking-[0.1em] text-slate-500">
                 {t("patternForge.selectedLine")}
               </p>
-              <p className="mt-1 font-mono text-sm font-semibold text-white">
+              <p className="mt-1 break-words font-mono text-sm font-semibold leading-6 text-white">
                 {feedbackSelectedLineSan || feedback.wrongMove || t("common.na")}
               </p>
             </div>
             <div className="rounded-xl border border-white/10 bg-slate-950/35 p-3">
-              <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+              <p className="break-words text-xs uppercase tracking-[0.1em] text-slate-500">
                 {t("patternForge.correctLine")}
               </p>
-              <p className="mt-1 font-mono text-sm font-semibold text-emerald-100">
+              <p className="mt-1 break-words font-mono text-sm font-semibold leading-6 text-emerald-100">
                 {feedbackSolutionLineSan || t("common.na")}
               </p>
             </div>
           </div>
-          <p className="mt-3 text-sm leading-6 text-slate-200">
+          <p className="mt-3 break-words text-sm leading-6 text-slate-200">
             {feedback.explanation || localizeForgeItem(puzzle, "explanation", language)}
           </p>
           {!feedback.isCorrect ? (

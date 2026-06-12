@@ -1,65 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import Sidebar, { mainNavigationItems } from "../components/Sidebar.jsx";
+import Sidebar, {
+  getNavigationLabelForState,
+  isNavigationChildActive,
+  journeyNavigation,
+  mainNavigationItems,
+} from "../components/Sidebar.jsx";
 import { useAuth } from "../contexts/AuthContext.js";
 import { useLanguage } from "../contexts/LanguageContext.jsx";
 
 const brandLogoSrc = "/astrochess-logo.png";
 
-const bottomNavigationLabels = ["Home", "Games", "Analysis", "Openings", "AI Coach", "Calendar"];
-
-const drawerNavigationGroups = [
-  ["Home", "Games", "Analysis", "Openings", "AI Coach", "Practice", "Calendar"],
-  ["Academy", "Master Replay", "Pattern Forge"],
-];
-
-const practiceExperienceLabels = {
-  academy: "Academy",
-  "master-replay": "Master Replay",
-  "pattern-forge": "Pattern Forge",
-};
+const bottomNavigationLabels = ["Home", "Games", "Openings", "Analysis", "AI Coach"];
 
 const navigationLookup = new Map(mainNavigationItems.map((item) => [item.label, item]));
-
-const extraDrawerItems = {
-  Academy: {
-    label: "Academy",
-    target: "Practice",
-    practiceExperience: "academy",
-    icon: (
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 5.5A2.5 2.5 0 0 1 7.5 3H19v16H7.5A2.5 2.5 0 0 0 5 21V5.5Zm0 0A2.5 2.5 0 0 1 7.5 8H19" />
-    ),
-  },
-  "Master Replay": {
-    label: "Master Replay",
-    target: "Practice",
-    practiceExperience: "master-replay",
-    icon: (
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8 4h8l-1 4h2.5L12 20 13 11h-3L8 4Z" />
-    ),
-  },
-  "Pattern Forge": {
-    label: "Pattern Forge",
-    target: "Practice",
-    practiceExperience: "pattern-forge",
-    icon: (
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18h12M8 18l1-6 3-7 3 7 1 6M9 12h6M5 21h14" />
-    ),
-  },
-  Profile: {
-    label: "Profile",
-    target: "Home",
-    icon: (
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 9a7 7 0 0 0-14 0" />
-    ),
-  },
-  Settings: {
-    label: "Settings",
-    target: "Home",
-    icon: (
-      <path strokeLinecap="round" strokeLinejoin="round" d="M10.3 4.3 12 3l1.7 1.3 2.1-.2 1 1.9 1.9 1-.2 2.1L20 12l-1.5 1.9.2 2.1-1.9 1-1 1.9-2.1-.2L12 21l-1.7-1.3-2.1.2-1-1.9-1.9-1 .2-2.1L4 12l1.5-1.9-.2-2.1 1.9-1 1-1.9 2.1.2ZM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-    ),
-  },
-};
 
 function useMediaQuery(query) {
   const [matches, setMatches] = useState(() => {
@@ -96,9 +49,9 @@ function NavIcon({ children, className = "" }) {
 function getDrawerItem(label) {
   const sidebarItem = navigationLookup.get(label);
   if (sidebarItem) {
-    return { ...sidebarItem, target: sidebarItem.label };
+    return { ...sidebarItem, target: sidebarItem.target || sidebarItem.label };
   }
-  return extraDrawerItems[label] || { label, target: "Home", icon: null };
+  return { label, target: "Home", icon: null };
 }
 
 function getUserName(user, fallback = "User") {
@@ -149,13 +102,14 @@ function MobileHeader({ onOpenDrawer, chessComAvatar = "" }) {
 
 function MobileBottomNavigation({ activeItem, activePracticeExperience = "", onNavigate }) {
   const items = bottomNavigationLabels.map(getDrawerItem);
-  const activeNavigationLabel =
-    activeItem === "Practice" && activePracticeExperience
-      ? practiceExperienceLabels[activePracticeExperience] || activeItem
-      : activeItem;
+  const activeNavigationLabel = getNavigationLabelForState(activeItem, activePracticeExperience);
 
   return (
-    <nav className="mobile-bottom-nav md:hidden" aria-label="Navegação principal">
+    <nav
+      className="mobile-bottom-nav md:hidden"
+      style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
+      aria-label="Navegação principal"
+    >
       {items.map((item) => {
         const isActive = activeNavigationLabel === item.label;
 
@@ -198,12 +152,40 @@ function MobileDrawer({
   const { user, isAuthenticated } = useAuth();
   const { language, setLanguage, supportedLanguages, t } = useLanguage();
   const [chessUsernameDraft, setChessUsernameDraft] = useState(connectedUsername || "");
-  const activeNavigationLabel =
-    activeItem === "Practice" && activePracticeExperience
-      ? practiceExperienceLabels[activePracticeExperience] || activeItem
-      : activeItem;
+  const activeNavigationLabel = getNavigationLabelForState(activeItem, activePracticeExperience);
+  const activeGroupIds = useMemo(
+    () =>
+      journeyNavigation
+        .filter(
+          (entry) =>
+            entry.type === "group" &&
+            ((entry.id === "training" && activeItem === "Practice") ||
+              entry.children?.some((child) =>
+                isNavigationChildActive(child, activeItem, activePracticeExperience)
+              ))
+        )
+        .map((entry) => entry.id),
+    [activeItem, activePracticeExperience]
+  );
+  const [expandedGroups, setExpandedGroups] = useState(() => ({
+    play: true,
+    insights: true,
+    training: true,
+    compete: true,
+  }));
   const userName = getUserName(user, t("sidebar.userFallback", "User"));
   const userEmail = getUserEmail(user);
+
+  useEffect(() => {
+    if (!activeGroupIds.length) return;
+    setExpandedGroups((current) => {
+      const next = { ...current };
+      activeGroupIds.forEach((id) => {
+        next[id] = true;
+      });
+      return next;
+    });
+  }, [activeGroupIds]);
 
   useEffect(() => {
     setChessUsernameDraft(connectedUsername || "");
@@ -333,34 +315,107 @@ function MobileDrawer({
           </div>
         </details>
 
-        <div className="mt-6 grid gap-5">
-          {drawerNavigationGroups.map((group, groupIndex) => (
-            <div key={group.join("-")} className={groupIndex > 0 ? "border-t border-purple-300/14 pt-5" : ""}>
-              <div className="grid gap-2">
-                {group.map((label) => {
-                  const item = getDrawerItem(label);
-                  const isActive = activeNavigationLabel === item.label;
+        <div className="mt-6 grid gap-4">
+          {journeyNavigation.map((entry) => {
+            if (entry.type === "item") {
+              const isActive = activeNavigationLabel === entry.label;
 
-                  return (
-                    <button
-                      key={label}
-                      type="button"
-                      onClick={() => {
-                        onNavigate(item.target, item);
-                        onClose();
-                      }}
-                      className={["mobile-drawer-link", isActive ? "is-active" : ""].join(" ")}
-                    >
-                      <span className="grid h-10 w-10 place-items-center rounded-xl bg-white/[0.04] text-slate-400">
-                        <NavIcon>{item.icon}</NavIcon>
-                      </span>
-                      <span className="flex-1 text-left">{item.label}</span>
-                    </button>
-                  );
-                })}
+              return (
+                <button
+                  key={entry.label}
+                  type="button"
+                  onClick={() => {
+                    onNavigate(entry.target, entry);
+                    onClose();
+                  }}
+                  className={["mobile-drawer-link", isActive ? "is-active" : ""].join(" ")}
+                >
+                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-white/[0.04] text-slate-400">
+                    <NavIcon>{entry.icon}</NavIcon>
+                  </span>
+                  <span className="flex-1 text-left">{t(entry.translationKey, entry.label)}</span>
+                </button>
+              );
+            }
+
+            const isGroupActive =
+              (entry.id === "training" && activeItem === "Practice") ||
+              entry.children?.some((child) =>
+                isNavigationChildActive(child, activeItem, activePracticeExperience)
+              );
+            const isExpanded = expandedGroups[entry.id] || isGroupActive;
+
+            return (
+              <div
+                key={entry.id}
+                className="rounded-2xl border border-purple-300/12 bg-white/[0.025] p-2"
+              >
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpandedGroups((current) => ({
+                      ...current,
+                      [entry.id]: !current[entry.id],
+                    }))
+                  }
+                  className={[
+                    "flex min-h-12 w-full items-center gap-3 rounded-xl px-2 text-sm font-bold transition",
+                    isGroupActive ? "text-cyan-100" : "text-slate-300 hover:bg-white/[0.04] hover:text-white",
+                  ].join(" ")}
+                  aria-expanded={isExpanded}
+                >
+                  <span
+                    className={[
+                      "grid h-10 w-10 shrink-0 place-items-center rounded-xl border",
+                      isGroupActive
+                        ? "border-cyan-300/30 bg-cyan-300/10 text-cyan-100"
+                        : "border-white/10 bg-white/[0.04] text-slate-500",
+                    ].join(" ")}
+                  >
+                    <NavIcon>{entry.icon}</NavIcon>
+                  </span>
+                  <span className="flex-1 text-left">{t(entry.translationKey, entry.label)}</span>
+                  <NavIcon className={["h-4 w-4 transition-transform", isExpanded ? "rotate-180" : ""].join(" ")}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" />
+                  </NavIcon>
+                </button>
+
+                <div
+                  className={[
+                    "grid overflow-hidden transition-[grid-template-rows,opacity] duration-300",
+                    isExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+                  ].join(" ")}
+                >
+                  <div className="min-h-0 space-y-1 border-l border-purple-300/14 pb-1 pl-3 pt-2 ml-5">
+                    {entry.children?.map((child) => {
+                      const isActive = isNavigationChildActive(child, activeItem, activePracticeExperience);
+
+                      return (
+                        <button
+                          key={child.label}
+                          type="button"
+                          onClick={() => {
+                            onNavigate(child.target, child);
+                            onClose();
+                          }}
+                          className={[
+                            "mobile-drawer-link min-h-11",
+                            isActive ? "is-active" : "",
+                          ].join(" ")}
+                          aria-current={isActive ? "page" : undefined}
+                        >
+                          <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/[0.04] text-slate-400">
+                            <NavIcon>{child.icon}</NavIcon>
+                          </span>
+                          <span className="flex-1 text-left">{t(child.translationKey, child.label)}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
       </aside>
@@ -430,6 +485,7 @@ export default function MainLayout({
 
       <Sidebar
         activeItem={activeItem}
+        activePracticeExperience={activePracticeExperience}
         onActiveItemChange={onActiveItemChange}
         chessComAvatar={chessComAvatar}
         collapsed={sidebarCollapsed}

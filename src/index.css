@@ -570,7 +570,6 @@ body {
   bottom: max(0.75rem, env(safe-area-inset-bottom));
   z-index: 60;
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 0.25rem;
   min-height: 68px;
   border: 1px solid rgba(168, 85, 247, 0.22);

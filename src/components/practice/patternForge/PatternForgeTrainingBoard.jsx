@@ -8,6 +8,7 @@ import {
   mockForgePuzzles,
 } from "../../../data/mockPatternForge.js";
 import ReviewBoard from "../../review/ReviewBoard.js";
+import ForgeLeaderboard from "./ForgeLeaderboard.jsx";
 import ForgeRightPanel from "./ForgeRightPanel.jsx";
 import "../../../styles/gameReview.css";
 
@@ -189,6 +190,22 @@ function formatLineAsSan(fen, line = []) {
   return sanMoves.join(" ");
 }
 
+function getDisplayRoundGoal(goal, language = "pt-BR") {
+  const rawGoal = String(goal || "").trim();
+  const isPt = String(language || "").toLowerCase().startsWith("pt");
+
+  if (!isPt || !rawGoal) return rawGoal;
+
+  const normalized = rawGoal.toLowerCase();
+  if (normalized.includes("understand")) return "Entender os padrões";
+  if (normalized.includes("recognize faster")) return "Reconhecer mais rápido";
+  if (normalized.includes("compress calculation")) return "Comprimir o cálculo";
+  if (normalized.includes("automatic recognition")) return "Reconhecimento automático";
+  if (normalized.includes("instinct")) return "Teste de instinto";
+
+  return rawGoal;
+}
+
 function MobileStatScroller({ items = [] }) {
   return (
     <div className="pattern-forge-mobile-scroll max-w-full min-w-0 overflow-x-auto overflow-y-hidden pb-1">
@@ -196,11 +213,11 @@ function MobileStatScroller({ items = [] }) {
         {items.map(([label, value, detail]) => (
           <div
             key={label}
-            className="w-[142px] shrink-0 snap-start rounded-3xl border border-white/10 bg-slate-950/50 p-4"
+            className="w-[142px] min-w-0 shrink-0 snap-start rounded-3xl border border-white/10 bg-slate-950/50 p-4"
           >
-            <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">{label}</p>
-            <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
-            {detail ? <p className="mt-1 text-xs leading-5 text-slate-500">{detail}</p> : null}
+            <p className="break-words text-[10px] uppercase tracking-[0.08em] text-slate-500">{label}</p>
+            <p className="mt-2 break-words text-2xl font-semibold text-white">{value}</p>
+            {detail ? <p className="mt-1 break-words text-xs leading-5 text-slate-500">{detail}</p> : null}
           </div>
         ))}
       </div>
@@ -208,7 +225,7 @@ function MobileStatScroller({ items = [] }) {
   );
 }
 
-function MobileCycleTimeline({ rounds = [], currentRound, currentDay, t }) {
+function MobileCycleTimeline({ rounds = [], currentRound, currentDay, t, language }) {
   const activeRound = rounds.find((round) => round.round === currentRound.round) || currentRound;
   const activeRoundProgress = activeRound.targetDays
     ? Math.min(100, Math.round((currentDay / activeRound.targetDays) * 100))
@@ -218,13 +235,13 @@ function MobileCycleTimeline({ rounds = [], currentRound, currentDay, t }) {
     <section className="max-w-full min-w-0 overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.035] p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-rose-200">
+          <p className="break-words text-[10px] font-bold uppercase tracking-[0.1em] text-rose-200">
             {t("patternForge.compressionSchedule")}
           </p>
-          <h2 className="mt-1 text-xl font-semibold text-white">
+          <h2 className="mt-1 break-words text-xl font-semibold text-white">
             {t("patternForge.roundNumber", undefined, { round: activeRound.round })}
           </h2>
-          <p className="mt-1 text-sm leading-5 text-slate-400">
+          <p className="mt-1 break-words text-sm leading-5 text-slate-400">
             {t("patternForge.scheduleCompactHint", "Same puzzle set, less time each round.")}
           </p>
         </div>
@@ -247,7 +264,7 @@ function MobileCycleTimeline({ rounds = [], currentRound, currentDay, t }) {
             <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">
               {t("patternForge.dailyWorkload", "Daily workload")}
             </p>
-            <p className="mt-1 text-lg font-semibold text-rose-100">
+            <p className="mt-1 break-words text-lg font-semibold leading-tight text-rose-100">
               {activeRound.dailyTarget || currentRound.dailyTarget || 0} {t("patternForge.perDayShort", "/dia")}
             </p>
           </div>
@@ -278,21 +295,21 @@ function MobileCycleTimeline({ rounds = [], currentRound, currentDay, t }) {
                 ].join(" ")}
               >
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-white">
+                  <p className="break-words text-sm font-semibold text-white">
                     {t("patternForge.roundNumber", undefined, { round: round.round })}
                   </p>
                   <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[11px] font-semibold text-slate-200">
                     {round.targetDays}d
                   </span>
                 </div>
-                <p className="mt-3 text-2xl font-semibold text-white">
+                <p className="mt-3 break-words text-2xl font-semibold text-white">
                   {round.dailyTarget || 0}
                   <span className="ml-1 text-xs font-medium text-slate-400">
                     {t("patternForge.puzzlesPerDayShort", "puzzles/day")}
                   </span>
                 </p>
                 <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-400">
-                  {round.goal || t("patternForge.patternBuilding", "Pattern building")}
+                  {getDisplayRoundGoal(round.goal, language) || t("patternForge.patternBuilding", "Pattern building")}
                 </p>
               </article>
             );
@@ -326,13 +343,13 @@ function MobileFeedbackCard({
           : "border-rose-300/35 bg-rose-400/10 shadow-rose-950/25",
       ].join(" ")}
     >
-      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300">
+      <p className="break-words text-[10px] font-bold uppercase tracking-[0.1em] text-slate-300">
         {feedback.isCorrect ? t("patternForge.correctTitle") : t("patternForge.notQuiteTitle")}
       </p>
       <h2 className="mt-2 text-2xl font-semibold text-white">
-        {feedback.isCorrect ? "✓ Correct" : "✕ Incorrect"}
+        {feedback.isCorrect ? t("patternForge.correctTitle") : t("patternForge.incorrectMoveTitle")}
       </h2>
-      <p className="mt-2 text-sm leading-6 text-slate-300">
+      <p className="mt-2 break-words text-sm leading-6 text-slate-300">
         {feedback.isCorrect
           ? t("patternForge.patternRecognized", "Theme learned. Keep the recognition loop moving.")
           : feedback.explanation || puzzle.explanation || t("patternForge.mistakeDetected")}
@@ -348,7 +365,7 @@ function MobileFeedbackCard({
               <p className="text-[10px] uppercase tracking-[0.14em] text-rose-200">
                 {t("patternForge.yourMove", "Your move")}
               </p>
-              <p className="mt-1 break-words font-mono text-sm font-semibold text-white">
+              <p className="mt-1 break-words font-mono text-sm font-semibold leading-6 text-white">
                 {feedbackSelectedLineSan || feedback.wrongMove || t("common.na")}
               </p>
             </div>
@@ -357,7 +374,7 @@ function MobileFeedbackCard({
             <p className="text-[10px] uppercase tracking-[0.14em] text-emerald-200">
               {t("patternForge.correctContinuation", "Correct continuation")}
             </p>
-            <p className="mt-1 break-words font-mono text-sm font-semibold text-emerald-100">
+            <p className="mt-1 break-words font-mono text-sm font-semibold leading-6 text-emerald-100">
               {feedbackSolutionLineSan || t("common.na")}
             </p>
           </div>
@@ -406,6 +423,36 @@ function MobileFeedbackCard({
   );
 }
 
+function ForgeViewTabs({ activeView, onChange, t }) {
+  const tabs = [
+    ["training", t("patternForge.trainingTab", "Training")],
+    ["leaderboards", t("patternForge.leaderboardsTab", "Leaderboards")],
+  ];
+
+  return (
+    <div className="grid grid-cols-2 gap-1 rounded-2xl border border-white/10 bg-black/20 p-1">
+      {tabs.map(([id, label]) => {
+        const isActive = activeView === id;
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onChange(id)}
+            className={[
+              "min-h-11 rounded-xl px-2 text-xs font-bold transition sm:text-sm",
+              isActive
+                ? "bg-gradient-to-r from-rose-300 via-purple-300 to-cyan-200 text-slate-950 shadow-[0_0_24px_rgba(168,85,247,0.22)]"
+                : "text-slate-400 hover:bg-white/[0.05] hover:text-white",
+            ].join(" ")}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function normalizePuzzle(puzzle) {
   const rawSolution = puzzle?.solutionMoves || puzzle?.solution || puzzle?.solutionLine || [];
   const solution = (Array.isArray(rawSolution) ? rawSolution : String(rawSolution).split(/\s+/))
@@ -445,9 +492,12 @@ export default function PatternForgeTrainingBoard({
   calendarProgress,
   puzzles = [],
   themeReasons = [],
+  leaderboards = null,
   onSubmitAttempt,
   onCompleteDailySession,
   onCompleteCycle,
+  onRefreshLeaderboards,
+  leaderboardsLoading = false,
 }) {
   const { language, t } = useLanguage();
   const [currentPuzzleIndex, setCurrentPuzzleIndex] = useState(0);
@@ -478,6 +528,7 @@ export default function PatternForgeTrainingBoard({
   const [puzzleStartedAt, setPuzzleStartedAt] = useState(() => Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isMobileLayout, setIsMobileLayout] = useState(false);
+  const [activeForgeView, setActiveForgeView] = useState("training");
   const audioContextRef = useRef(null);
 
   const currentRound = getCurrentRound(cycleDraft);
@@ -617,6 +668,11 @@ export default function PatternForgeTrainingBoard({
   useEffect(() => {
     setDailyGoalPromptDismissed(false);
   }, [todaySession?._id, todaySession?.id]);
+
+  useEffect(() => {
+    if (activeForgeView !== "leaderboards") return;
+    onRefreshLeaderboards?.();
+  }, [activeForgeView, onRefreshLeaderboards]);
 
   const finishIfNeeded = async (nextIndex, nextStats, nextMistakes, nextAttempts) => {
     if (nextIndex >= total) {
@@ -996,7 +1052,7 @@ export default function PatternForgeTrainingBoard({
               <h1 className="mt-2 text-3xl font-semibold text-white">
                 {t("patternForge.roundNumber", undefined, { round: currentRound.round })}
               </h1>
-              <p className="mt-1 text-sm text-slate-400">
+              <p className="mt-1 break-words text-sm text-slate-400">
                 {t("patternForge.dayProgress")} {dayProgress} / {currentRound.targetDays}
               </p>
               {isBehindSchedule ? (
@@ -1005,13 +1061,13 @@ export default function PatternForgeTrainingBoard({
                 </p>
               ) : null}
             </div>
-            <span className="rounded-full border border-purple-300/25 bg-purple-300/10 px-3 py-1 text-xs font-semibold text-purple-100">
+            <span className="max-w-[46%] break-words rounded-full border border-purple-300/25 bg-purple-300/10 px-3 py-1 text-xs font-semibold leading-5 text-purple-100">
               {phase.label}
             </span>
           </div>
           <div className="mt-5">
             <div className="flex items-center justify-between gap-3 text-sm">
-              <span className="font-semibold text-white">{cycleProgress}% Complete</span>
+              <span className="font-semibold text-white">{cycleProgress}%</span>
               <span className="text-slate-400">{estimatedRemaining}</span>
             </div>
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-950/70">
@@ -1023,6 +1079,18 @@ export default function PatternForgeTrainingBoard({
           </div>
         </header>
 
+        <ForgeViewTabs activeView={activeForgeView} onChange={setActiveForgeView} t={t} />
+
+        {activeForgeView === "leaderboards" ? (
+          <ForgeLeaderboard
+            leaderboards={leaderboards || undefined}
+            currentUserId={leaderboards?.currentUserId}
+            loading={leaderboardsLoading}
+          />
+        ) : null}
+
+        {activeForgeView !== "training" ? null : (
+        <>
         <section className="rounded-[28px] border border-purple-300/18 bg-white/[0.035] p-5">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-100/80">
             {t("patternForge.todaysTraining", "Today's training")}
@@ -1035,7 +1103,7 @@ export default function PatternForgeTrainingBoard({
           </h2>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-3">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">{t("patternForge.todaysTarget")}</p>
+              <p className="break-words text-[10px] uppercase tracking-[0.08em] text-slate-500">{t("patternForge.todaysTarget")}</p>
               <p className="mt-1 text-xl font-semibold text-white">{dailyTarget}</p>
               {dailyTarget !== originalDailyTarget ? (
                 <p className="mt-1 text-[11px] text-amber-100/80">
@@ -1044,7 +1112,7 @@ export default function PatternForgeTrainingBoard({
               ) : null}
             </div>
             <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-3">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">{t("patternForge.remainingToday")}</p>
+              <p className="break-words text-[10px] uppercase tracking-[0.08em] text-slate-500">{t("patternForge.remainingToday")}</p>
               <p className="mt-1 text-xl font-semibold text-white">{remainingToday}</p>
             </div>
           </div>
@@ -1075,7 +1143,7 @@ export default function PatternForgeTrainingBoard({
               </div>
               <span
                 className={[
-                  "shrink-0 rounded-full border px-3 py-1 text-[10px] font-bold",
+                  "max-w-[48%] shrink-0 break-words rounded-full border px-3 py-1 text-[10px] font-bold leading-4",
                   boardEffect === "wrong"
                     ? "border-rose-300/35 bg-rose-300/12 text-rose-100"
                     : boardEffect === "correct"
@@ -1120,7 +1188,7 @@ export default function PatternForgeTrainingBoard({
                 {currentPuzzleIndex + 1}/{total}
               </span>
             </div>
-            <p className="mt-4 text-sm leading-6 text-slate-300">{puzzle.prompt}</p>
+            <p className="mt-4 break-words text-sm leading-6 text-slate-300">{puzzle.prompt}</p>
             <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
               <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">
                 {t("patternForge.moveTrail", "Move trail")}
@@ -1190,6 +1258,7 @@ export default function PatternForgeTrainingBoard({
           currentRound={currentRound}
           currentDay={dayProgress}
           t={t}
+          language={language}
         />
 
         <details className="rounded-[28px] border border-white/10 bg-white/[0.035] p-5">
@@ -1250,6 +1319,8 @@ export default function PatternForgeTrainingBoard({
             )}
           </div>
         </details>
+        </>
+        )}
       </section>
     );
   }
@@ -1257,13 +1328,13 @@ export default function PatternForgeTrainingBoard({
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       <div className="rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(35,12,22,0.94),rgba(9,12,18,0.98))] p-5 sm:p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-200">
+        <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <p className="break-words text-xs font-semibold uppercase tracking-[0.1em] text-rose-200">
               {t("patternForge.activeMultiDayCycle")}
             </p>
-            <h1 className="mt-2 text-3xl font-semibold text-white">{t("patternForge.title")}</h1>
-            <p className="mt-2 text-sm text-slate-400">
+            <h1 className="mt-2 break-words text-3xl font-semibold text-white">{t("patternForge.title")}</h1>
+            <p className="mt-2 break-words text-sm leading-6 text-slate-400">
               {t("patternForge.roundOf", undefined, { current: currentRound.round, total: totalRounds })} ·{" "}
               {phase.label} · {t("patternForge.patternSetCount", undefined, { count: patternSetSize })}
             </p>
@@ -1301,6 +1372,16 @@ export default function PatternForgeTrainingBoard({
         </div>
       </div>
 
+      <ForgeViewTabs activeView={activeForgeView} onChange={setActiveForgeView} t={t} />
+
+      {activeForgeView === "leaderboards" ? (
+        <ForgeLeaderboard
+          leaderboards={leaderboards || undefined}
+          currentUserId={leaderboards?.currentUserId}
+          loading={leaderboardsLoading}
+        />
+      ) : (
+      <>
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
         {[
           ["patternForge.currentRound", t("patternForge.roundOf", undefined, { current: currentRound.round, total: totalRounds })],
@@ -1316,9 +1397,9 @@ export default function PatternForgeTrainingBoard({
           ["patternForge.forgeProgress", `${cycleProgress}%`],
           ["patternForge.currentPhase", phase.label],
         ].map(([key, value]) => (
-          <div key={key} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{t(key)}</p>
-            <p className="mt-1 text-xl font-semibold text-white">{value}</p>
+          <div key={key} className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+            <p className="break-words text-xs uppercase tracking-[0.08em] text-slate-500">{t(key)}</p>
+            <p className="mt-1 break-words text-xl font-semibold leading-tight text-white">{value}</p>
           </div>
         ))}
       </section>
@@ -1329,18 +1410,18 @@ export default function PatternForgeTrainingBoard({
           <div className="pointer-events-none absolute -left-24 top-16 h-56 w-56 rounded-full bg-rose-500/10 blur-3xl" />
           <div className="pointer-events-none absolute -right-20 bottom-10 h-64 w-64 rounded-full bg-purple-500/14 blur-3xl" />
           <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+            <div className="min-w-0">
+              <p className="break-words text-xs uppercase tracking-[0.08em] text-slate-500">
                 {t(`patternForge.side.${puzzle.sideToMove}`, puzzle.sideToMove)}
               </p>
-              <h2 className="mt-1 text-2xl font-semibold text-white">
+              <h2 className="mt-1 break-words text-2xl font-semibold leading-tight text-white">
                 {getThemeTitle(puzzle.theme, language)}
               </h2>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <span
                 className={[
-                  "rounded-full border px-3 py-1 text-xs font-semibold transition duration-300",
+                  "max-w-full break-words rounded-full border px-3 py-1 text-xs font-semibold leading-5 transition duration-300",
                   boardEffect === "wrong"
                     ? "border-rose-300/35 bg-rose-300/12 text-rose-100"
                     : boardEffect === "correct"
@@ -1350,7 +1431,7 @@ export default function PatternForgeTrainingBoard({
               >
                 {boardEffectLabel}
               </span>
-              <span className="rounded-full border border-white/10 bg-slate-950/50 px-3 py-1 text-xs font-semibold text-slate-300">
+              <span className="break-words rounded-full border border-white/10 bg-slate-950/50 px-3 py-1 text-xs font-semibold leading-5 text-slate-300">
                 {t("patternForge.liveBoard", "Live board")}
               </span>
             </div>
@@ -1407,10 +1488,10 @@ export default function PatternForgeTrainingBoard({
             >
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em]">
+                  <p className="break-words text-xs font-semibold uppercase tracking-[0.08em]">
                     {feedback.isCorrect ? t("patternForge.correctTitle") : t("patternForge.notQuiteTitle")}
                   </p>
-                  <p className="mt-1 text-base font-semibold text-white">
+                  <p className="mt-1 break-words text-base font-semibold leading-6 text-white">
                     {feedback.isCorrect
                       ? t("patternForge.patternRecognized", "Padrão reconhecido. Continue o ciclo.")
                       : t("patternForge.mistakeDetected", "Mistake detected. Compare your move with the correct line.")}
@@ -1418,18 +1499,18 @@ export default function PatternForgeTrainingBoard({
                   {!feedback.isCorrect ? (
                     <div className="mt-3 grid gap-2 sm:grid-cols-2">
                       <div className="rounded-xl border border-rose-300/30 bg-rose-950/35 px-3 py-2">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-rose-200">
+                        <p className="break-words text-[11px] font-bold uppercase tracking-[0.08em] text-rose-200">
                           {t("patternForge.yourMove", "Your move")}
                         </p>
-                        <p className="mt-1 font-mono text-sm font-semibold text-white">
+                        <p className="mt-1 break-words font-mono text-sm font-semibold leading-6 text-white">
                           {feedbackSelectedLineSan || feedback.wrongMove || t("common.na")}
                         </p>
                       </div>
                       <div className="rounded-xl border border-emerald-300/25 bg-emerald-950/25 px-3 py-2">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-200">
+                        <p className="break-words text-[11px] font-bold uppercase tracking-[0.08em] text-emerald-200">
                           {t("patternForge.correctLine")}
                         </p>
-                        <p className="mt-1 font-mono text-sm font-semibold text-emerald-100">
+                        <p className="mt-1 break-words font-mono text-sm font-semibold leading-6 text-emerald-100">
                           {feedbackSolutionLineSan || t("common.na")}
                         </p>
                       </div>
@@ -1457,13 +1538,13 @@ export default function PatternForgeTrainingBoard({
             <div className="mt-4 rounded-2xl border border-purple-300/35 bg-purple-400/10 px-5 py-4 text-purple-50 shadow-lg shadow-purple-950/20">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-purple-200">
+                  <p className="break-words text-xs font-bold uppercase tracking-[0.08em] text-purple-200">
                     {t("patternForge.dailyGoalReached", "Meta diária atingida")}
                   </p>
-                  <h3 className="mt-1 text-lg font-semibold text-white">
+                  <h3 className="mt-1 break-words text-lg font-semibold leading-snug text-white">
                     {t("patternForge.dailyGoalCongrats", "Great work. You hit today's Pattern Forge target.")}
                   </h3>
-                  <p className="mt-1 text-sm leading-6 text-purple-100/80">
+                  <p className="mt-1 break-words text-sm leading-6 text-purple-100/80">
                     {t("patternForge.dailyGoalChoice", "You can finish the session now or keep training with the extra non-repeated puzzles prepared for this round.")}
                   </p>
                 </div>
@@ -1495,7 +1576,7 @@ export default function PatternForgeTrainingBoard({
           ) : null}
           <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
             <div className="rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
-              <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
+              <p className="break-words text-xs uppercase tracking-[0.08em] text-slate-500">
                 {t("patternForge.moveTrail", "Move trail")}
               </p>
               <p className="mt-2 min-h-6 break-words font-mono text-sm font-semibold text-white">
@@ -1504,15 +1585,15 @@ export default function PatternForgeTrainingBoard({
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:min-w-[300px]">
               <div className="rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500">
+                <p className="break-words text-[11px] uppercase tracking-[0.08em] text-slate-500">
                   {t("patternForge.lastMove", "Last move")}
                 </p>
-                <p className="mt-1 font-mono text-sm font-semibold text-purple-100">
+                <p className="mt-1 break-words font-mono text-sm font-semibold leading-6 text-purple-100">
                   {lastMoveSan || t("common.na")}
                 </p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500">
+                <p className="break-words text-[11px] uppercase tracking-[0.08em] text-slate-500">
                   {t("patternForge.streak")}
                 </p>
                 <p className="mt-1 text-sm font-semibold text-emerald-100">
@@ -1520,7 +1601,7 @@ export default function PatternForgeTrainingBoard({
                 </p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500">
+                <p className="break-words text-[11px] uppercase tracking-[0.08em] text-slate-500">
                   {t("patternForge.recognitionSpeed", "Recognition")}
                 </p>
                 <p className="mt-1 text-sm font-semibold text-rose-100">
@@ -1530,7 +1611,7 @@ export default function PatternForgeTrainingBoard({
             </div>
           </div>
           <details className="mt-3 rounded-2xl border border-white/10 bg-slate-950/35 px-4 py-3 text-sm text-slate-400">
-            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <summary className="cursor-pointer break-words text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
               {t("patternForge.positionFen", "Position FEN")}
             </summary>
             <p className="mt-2 break-words font-mono text-xs leading-5">{puzzle.fen}</p>
@@ -1572,11 +1653,11 @@ export default function PatternForgeTrainingBoard({
 
       <section id="pattern-forge-schedule" className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-white">{t("patternForge.compressionSchedule")}</h2>
-            <p className="mt-1 text-sm text-slate-400">{t("patternForge.scheduleDashboardHint")}</p>
+          <div className="min-w-0">
+            <h2 className="break-words text-xl font-semibold text-white">{t("patternForge.compressionSchedule")}</h2>
+            <p className="mt-1 break-words text-sm leading-6 text-slate-400">{t("patternForge.scheduleDashboardHint")}</p>
           </div>
-          <span className="rounded-full border border-rose-300/25 bg-rose-300/10 px-3 py-1 text-xs font-semibold text-rose-100">
+          <span className="max-w-full break-words rounded-full border border-rose-300/25 bg-rose-300/10 px-3 py-1 text-xs font-semibold leading-5 text-rose-100">
             {t("patternForge.patternSetCount", undefined, { count: patternSetSize })}
           </span>
         </div>
@@ -1591,16 +1672,16 @@ export default function PatternForgeTrainingBoard({
                   : "border-white/10 bg-slate-950/35",
               ].join(" ")}
             >
-              <p className="text-xs uppercase tracking-[0.16em] text-rose-200">
+              <p className="break-words text-xs uppercase tracking-[0.08em] text-rose-200">
                 {t("patternForge.roundNumber", undefined, { round: round.round })}
               </p>
-              <p className="mt-2 text-lg font-semibold text-white">
+              <p className="mt-2 break-words text-lg font-semibold leading-snug text-white">
                 {t("patternForge.scheduleLine", undefined, {
                   days: round.targetDays,
                   count: round.dailyTarget,
                 })}
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-400">{round.goal}</p>
+              <p className="mt-2 break-words text-sm leading-6 text-slate-400">{getDisplayRoundGoal(round.goal, language)}</p>
             </div>
           ))}
         </div>
@@ -1608,17 +1689,17 @@ export default function PatternForgeTrainingBoard({
 
       {themeReasons.length ? (
         <section className="rounded-[28px] border border-cyan-300/20 bg-cyan-300/[0.06] p-5">
-          <h2 className="text-xl font-semibold text-white">{t("patternForge.whyThemesTitle")}</h2>
+          <h2 className="break-words text-xl font-semibold text-white">{t("patternForge.whyThemesTitle")}</h2>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {themeReasons.map((reason) => {
               const confidence = formatReasonConfidence(reason.confidence);
               return (
-                <div key={`${reason.theme}-${reason.sourceField}`} className="rounded-2xl border border-white/10 bg-slate-950/35 p-4">
-                  <p className="font-semibold text-cyan-100">{getThemeTitle(reason.theme, language)}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">
+                <div key={`${reason.theme}-${reason.sourceField}`} className="min-w-0 rounded-2xl border border-white/10 bg-slate-950/35 p-4">
+                  <p className="break-words font-semibold text-cyan-100">{getThemeTitle(reason.theme, language)}</p>
+                  <p className="mt-2 break-words text-sm leading-6 text-slate-300">
                     {formatThemeReasonText(reason, language)}
                   </p>
-                  <p className="mt-3 text-xs text-cyan-200">
+                  <p className="mt-3 break-words text-xs leading-5 text-cyan-200">
                     {formatThemeReasonSource(reason.sourceField, language)}
                     {confidence ? ` · ${confidence}%` : ""}
                   </p>
@@ -1628,6 +1709,8 @@ export default function PatternForgeTrainingBoard({
           </div>
         </section>
       ) : null}
+      </>
+      )}
     </section>
   );
 }

@@ -73,6 +73,13 @@ export function getPatternForgeThemes() {
   });
 }
 
+export function getPatternForgeLeaderboards(limit = 50) {
+  const query = Number.isFinite(Number(limit)) ? `?limit=${encodeURIComponent(limit)}` : "";
+  return request(`/pattern-forge/leaderboards${query}`, {
+    method: "GET",
+  });
+}
+
 export function createPatternForgeCycle(payload) {
   return request("/pattern-forge/cycles", {
     method: "POST",

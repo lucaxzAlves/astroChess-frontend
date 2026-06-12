@@ -14,6 +14,7 @@ import OpeningsPage from "./pages/OpeningsPage.jsx";
 import Practice from "./pages/Practice.jsx";
 import {
   extractPlayerProfile,
+  extractChessComAvatarUrl,
   extractChessComUsername,
   getMyPlayerProfile,
   updateMyChessComUsername,
@@ -188,12 +189,14 @@ const itemToPath = {
 const practiceExperiencePaths = {
   academy: "/practice/academy",
   "master-replay": "/practice/master-replay",
+  "personal-replay": "/practice/personal-replay",
   "pattern-forge": "/practice/pattern-forge",
 };
 
 function pathToPracticeExperience(pathname) {
   if (pathname === "/practice/academy") return "academy";
   if (pathname === "/practice/master-replay") return "master-replay";
+  if (pathname === "/practice/personal-replay") return "personal-replay";
   if (pathname === "/practice/pattern-forge") return "pattern-forge";
   return "";
 }
@@ -570,7 +573,15 @@ export default function App() {
     try {
       const response = await updateMyChessComUsername(cleanUsername);
       const savedUsername = extractChessComUsername(response) || cleanUsername;
+      const savedAvatarUrl = extractChessComAvatarUrl(response);
       setSavedChessUsername(savedUsername);
+      if (savedAvatarUrl) {
+        setPlayerProfile((current) => ({
+          ...(current || {}),
+          username: savedUsername,
+          avatar: savedAvatarUrl,
+        }));
+      }
 
       const loaded = await loadChessComAccountData(savedUsername, {
         successMessage: "Nickname saved.",

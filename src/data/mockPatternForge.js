@@ -29,8 +29,8 @@ export const forgePresets = [
     translations: {
       "pt-BR": {
         title: "Ciclo Leve",
-        description: "Mais dias por round para construir reconhecimento sem pressa.",
-        meta: "100 puzzles · 3 rounds · 21/14/7 dias",
+        description: "Mais dias por rodada para construir reconhecimento sem pressa.",
+        meta: "100 puzzles · 3 rodadas · 21/14/7 dias",
       },
       en: {
         title: "Light Cycle",
@@ -46,8 +46,8 @@ export const forgePresets = [
     translations: {
       "pt-BR": {
         title: "Ciclo Equilibrado",
-        description: "Compressao progressiva para evoluir com consistencia sem esgotar.",
-        meta: "100 puzzles · 4 rounds · 14/7/4/2 dias",
+        description: "Compressão progressiva para evoluir com consistência sem esgotar.",
+        meta: "100 puzzles · 4 rodadas · 14/7/4/2 dias",
       },
       en: {
         title: "Balanced Cycle",
@@ -67,8 +67,8 @@ export const forgePresets = [
     translations: {
       "pt-BR": {
         title: "Ciclo Intenso",
-        description: "Compressao agressiva para quem quer alta pressao de reconhecimento.",
-        meta: "100 puzzles · 4 rounds · 7/4/2/1 dias",
+        description: "Compressão agressiva para quem quer alta pressão de reconhecimento.",
+        meta: "100 puzzles · 4 rodadas · 7/4/2/1 dias",
       },
       en: {
         title: "Intense Cycle",
@@ -87,9 +87,9 @@ export const forgePresets = [
     },
     translations: {
       "pt-BR": {
-        title: "Pattern Set Profundo",
-        description: "Conjunto maior para jogadores que querem volume e calculo serio.",
-        meta: "200 puzzles · 4 rounds · dificuldade desafiadora",
+        title: "Conjunto Profundo",
+        description: "Conjunto maior para jogadores que querem volume e cálculo sério.",
+        meta: "200 puzzles · 4 rodadas · dificuldade desafiadora",
       },
       en: {
         title: "Deep Pattern Set",
@@ -112,7 +112,7 @@ export const forgePresets = [
     translations: {
       "pt-BR": {
         title: "Reparo de Fraquezas",
-        description: "Foco maior em padroes extraidos das suas fraquezas recorrentes.",
+        description: "Foco maior em padrões extraídos das suas fraquezas recorrentes.",
         meta: "100 puzzles · fraquezas priorizadas · erros retornam",
       },
       en: {
@@ -131,8 +131,8 @@ export const forgePresets = [
     translations: {
       "pt-BR": {
         title: "Ciclo Personalizado",
-        description: "Monte manualmente o tamanho do set e o cronograma de compressao.",
-        meta: "Controle do Pattern Set e dos rounds",
+        description: "Monte manualmente o tamanho do conjunto e o cronograma.",
+        meta: "Controle do conjunto e das rodadas",
       },
       en: {
         title: "Custom Cycle",
@@ -150,7 +150,7 @@ export const compressionPresets = [
     translations: {
       "pt-BR": {
         title: "Leve",
-        description: "Mais espacado, ideal para rotina tranquila.",
+        description: "Mais espaçado, ideal para rotina tranquila.",
       },
       en: {
         title: "Light",
@@ -165,7 +165,7 @@ export const compressionPresets = [
     translations: {
       "pt-BR": {
         title: "Equilibrado",
-        description: "Boa progressao de reconhecimento sem queimar energia.",
+        description: "Boa progressão de reconhecimento sem queimar energia.",
       },
       en: {
         title: "Balanced",
@@ -179,7 +179,7 @@ export const compressionPresets = [
     translations: {
       "pt-BR": {
         title: "Intenso",
-        description: "Compressao rapida para treino pesado e curto.",
+        description: "Compressão rápida para treino pesado e curto.",
       },
       en: {
         title: "Intense",
@@ -193,7 +193,7 @@ export const compressionPresets = [
     translations: {
       "pt-BR": {
         title: "Personalizado",
-        description: "Ajuste manualmente os dias de cada round.",
+        description: "Ajuste manualmente os dias de cada rodada.",
       },
       en: {
         title: "Custom",
@@ -209,9 +209,9 @@ export const forgeThemes = [
     recommended: true,
     translations: {
       "pt-BR": {
-        title: "Tatica",
-        description: "Para cravadas, garfos, ataques descobertos, sacrificios e lances forcados.",
-        hint: "Reconhecimento rapido",
+        title: "Tática",
+        description: "Para cravadas, garfos, ataques descobertos, sacrifícios e lances forçados.",
+        hint: "Reconhecimento rápido",
       },
       en: {
         title: "Tactics",
@@ -225,9 +225,9 @@ export const forgeThemes = [
     recommended: true,
     translations: {
       "pt-BR": {
-        title: "Calculo",
-        description: "Para linhas forcadas, lances candidatos e precisao de ordem de lances.",
-        hint: "Variantes e revisao",
+        title: "Cálculo",
+        description: "Para linhas forçadas, lances candidatos e precisão de ordem de lances.",
+        hint: "Variantes e revisão",
       },
       en: {
         title: "Calculation",
@@ -286,7 +286,7 @@ export const forgeThemes = [
     id: "positional_decisions",
     translations: {
       "pt-BR": {
-        title: "Decisoes Posicionais",
+        title: "Decisões Posicionais",
         description: "Melhoria de pecas, casas fracas, trocas e planos de longo prazo.",
         hint: "Estrategia",
       },
@@ -302,8 +302,8 @@ export const forgeThemes = [
     translations: {
       "pt-BR": {
         title: "Recursos Defensivos",
-        description: "Contra-jogo, simplificacao, defesa ativa e salvamentos praticos.",
-        hint: "Resistencia",
+        description: "Contrajogo, simplificação, defesa ativa e salvamentos práticos.",
+        hint: "Resistência",
       },
       en: {
         title: "Defensive Resources",
@@ -316,9 +316,9 @@ export const forgeThemes = [
     id: "conversion",
     translations: {
       "pt-BR": {
-        title: "Conversao",
-        description: "Transforme vantagem em vitoria com precisao e paciencia.",
-        hint: "Finalizacao",
+        title: "Conversão",
+        description: "Transforme vantagem em vitória com precisão e paciência.",
+        hint: "Finalização",
       },
       en: {
         title: "Conversion",
@@ -331,8 +331,8 @@ export const forgeThemes = [
     id: "time_pressure",
     translations: {
       "pt-BR": {
-        title: "Pressao no Tempo",
-        description: "Decisoes rapidas, prioridades e padroes sob relogio baixo.",
+        title: "Pressão no Tempo",
+        description: "Decisões rapidas, prioridades e padrões sob relógio baixo.",
         hint: "Velocidade",
       },
       en: {
@@ -348,7 +348,7 @@ export const forgeThemes = [
       "pt-BR": {
         title: "Lances Candidatos",
         description: "Crie listas melhores antes de mergulhar em variantes.",
-        hint: "Metodo",
+        hint: "Método",
       },
       en: {
         title: "Candidate Moves",
@@ -361,8 +361,8 @@ export const forgeThemes = [
     id: "pawn_breaks",
     translations: {
       "pt-BR": {
-        title: "Rupturas de Peoes",
-        description: "Reconheca quando mudar a estrutura e abrir linhas.",
+        title: "Rupturas de Peões",
+        description: "Reconheça quando mudar a estrutura e abrir linhas.",
         hint: "Estrutura",
       },
       en: {
@@ -393,8 +393,8 @@ export const forgeDifficultyOptions = [
     id: "comfortable",
     translations: {
       "pt-BR": {
-        title: "Confortavel",
-        description: "Posicoes mais solucionaveis para construir confianca de padrao.",
+        title: "Confortável",
+        description: "Posições mais solucionáveis para construir confiança de padrao.",
       },
       en: {
         title: "Comfortable",
@@ -407,7 +407,7 @@ export const forgeDifficultyOptions = [
     translations: {
       "pt-BR": {
         title: "Desafiadora",
-        description: "Puzzles mais duros que exigem calculo mais profundo.",
+        description: "Puzzles mais duros que exigem cálculo mais profundo.",
       },
       en: {
         title: "Challenging",
@@ -420,7 +420,7 @@ export const forgeDifficultyOptions = [
     translations: {
       "pt-BR": {
         title: "Punitiva",
-        description: "Dificuldade alta. Boa para avancados, brutal sem foco.",
+        description: "Dificuldade alta. Boa para avançados, brutal sem foco.",
       },
       en: {
         title: "Punishing",
@@ -440,7 +440,7 @@ export const forgeRepetitionRules = [
     translations: {
       "pt-BR": {
         title: "Repetir puzzles errados",
-        description: "Qualquer puzzle falho recebe prioridade dentro do round atual.",
+        description: "Qualquer puzzle falho recebe prioridade dentro do rodada atual.",
       },
       en: {
         title: "Repeat missed puzzles",
@@ -567,7 +567,7 @@ export const mockForgePuzzles = [
     tags: ["king activity", "opposition", "pawn break"],
     translations: {
       "pt-BR": {
-        prompt: "Encontre a rota do rei que mantem chances de vitoria.",
+        prompt: "Encontre a rota do rei que mantem chances de vitória.",
         explanation:
           "Kf3 mantem opcoes de oposicao e prepara a ruptura correta de peao. Lances passivos de rei deixam as pretas criar uma fortaleza.",
         tags: ["atividade do rei", "oposicao", "ruptura de peao"],
@@ -616,7 +616,7 @@ export const mockForgePuzzles = [
         prompt: "Converta sem permitir contra-jogo.",
         explanation:
           "Kf3 centraliza primeiro. A conversao melhora o rei antes de empurrar peoes que podem criar contra-jogo.",
-        tags: ["conversao", "atividade do rei", "paciencia"],
+        tags: ["conversao", "atividade do rei", "paciência"],
       },
     },
     source: "mock",
@@ -647,6 +647,111 @@ export const mockForgePuzzles = [
   },
 ];
 
+const forgeLeaderboardPlayers = [
+  {
+    id: "forge-player-001",
+    username: "CosmicKnight",
+    avatar: null,
+    dailyPuzzles: 186,
+    monthlyPuzzles: 1842,
+    allTimePuzzles: 12840,
+    achievements: ["puzzle_grinder", "daily_streak", "pattern_master"],
+  },
+  {
+    id: "forge-player-002",
+    username: "TacticalNova",
+    avatar: null,
+    dailyPuzzles: 169,
+    monthlyPuzzles: 1710,
+    allTimePuzzles: 11920,
+    achievements: ["daily_streak", "forge_veteran"],
+  },
+  {
+    id: "forge-player-003",
+    username: "EndgameHunter",
+    avatar: null,
+    dailyPuzzles: 154,
+    monthlyPuzzles: 1665,
+    allTimePuzzles: 10880,
+    achievements: ["pattern_master"],
+  },
+  {
+    id: "forge-player-004",
+    username: "BlitzNebula",
+    avatar: null,
+    dailyPuzzles: 142,
+    monthlyPuzzles: 1520,
+    allTimePuzzles: 9740,
+    achievements: ["puzzle_grinder"],
+  },
+  {
+    id: "forge-player-005",
+    username: "RookOrbit",
+    avatar: null,
+    dailyPuzzles: 131,
+    monthlyPuzzles: 1417,
+    allTimePuzzles: 9320,
+    achievements: ["daily_streak"],
+  },
+  {
+    id: "forge-player-006",
+    username: "MateVector",
+    avatar: null,
+    dailyPuzzles: 124,
+    monthlyPuzzles: 1346,
+    allTimePuzzles: 8864,
+    achievements: ["forge_veteran"],
+  },
+  {
+    id: "forge-player-007",
+    username: "PatternPilot",
+    avatar: null,
+    dailyPuzzles: 118,
+    monthlyPuzzles: 1294,
+    allTimePuzzles: 8126,
+    achievements: ["puzzle_grinder", "daily_streak"],
+  },
+  {
+    id: "forge-player-008",
+    username: "SharpBishop",
+    avatar: null,
+    dailyPuzzles: 107,
+    monthlyPuzzles: 1188,
+    allTimePuzzles: 7702,
+    achievements: ["pattern_master"],
+  },
+  {
+    id: "forge-player-current",
+    username: "You",
+    avatar: null,
+    dailyPuzzles: 37,
+    monthlyPuzzles: 420,
+    allTimePuzzles: 1842,
+    achievements: ["daily_streak"],
+  },
+];
+
+function buildForgeLeaderboard(periodKey) {
+  const valueKey = `${periodKey}Puzzles`;
+  return forgeLeaderboardPlayers
+    .map((player) => ({
+      ...player,
+      puzzlesSolved: player[valueKey] || 0,
+    }))
+    .sort((a, b) => b.puzzlesSolved - a.puzzlesSolved)
+    .map((player, index) => ({
+      ...player,
+      rank: index + 1,
+    }));
+}
+
+export const mockForgeLeaderboards = {
+  daily: buildForgeLeaderboard("daily"),
+  monthly: buildForgeLeaderboard("monthly"),
+  allTime: buildForgeLeaderboard("allTime"),
+  currentUserId: "forge-player-current",
+};
+
 export const mockCycleStats = {
   accuracy: 76,
   currentStreak: 5,
@@ -655,8 +760,8 @@ export const mockCycleStats = {
 };
 
 export const mockCyclePhases = [
-  { id: "pattern_building", startRound: 1, label: { "pt-BR": "Construcao de Padroes", en: "Pattern Building" } },
-  { id: "compression", startRound: 2, label: { "pt-BR": "Compressao", en: "Compression" } },
+  { id: "pattern_building", startRound: 1, label: { "pt-BR": "Construção", en: "Pattern Building" } },
+  { id: "compression", startRound: 2, label: { "pt-BR": "Compressão", en: "Compression" } },
   { id: "final_forge", startRound: 4, label: { "pt-BR": "Forja Final", en: "Final Forge" } },
 ];
 
@@ -686,19 +791,19 @@ export function getThemeTitle(themeId, language) {
 export function getRoundGoals(language) {
   return [
     {
-      "pt-BR": "Entender os padroes",
+      "pt-BR": "Entender os padrões",
       en: "Understand the patterns",
     },
     {
-      "pt-BR": "Reconhecer mais rapido",
+      "pt-BR": "Reconhecer mais rápido",
       en: "Recognize faster",
     },
     {
-      "pt-BR": "Comprimir o calculo",
+      "pt-BR": "Comprimir o cálculo",
       en: "Compress calculation",
     },
     {
-      "pt-BR": "Reconhecimento automatico",
+      "pt-BR": "Reconhecimento automático",
       en: "Automatic recognition",
     },
     {

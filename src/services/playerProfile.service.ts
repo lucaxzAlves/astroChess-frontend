@@ -30,6 +30,15 @@ export function extractChessComUsername(payload: unknown): string {
   return typeof username === "string" ? username.trim() : "";
 }
 
+export function extractChessComAvatarUrl(payload: unknown): string {
+  const profile = unwrapPayload(payload);
+  const avatarUrl =
+    profile?.identities?.chessCom?.avatarUrl ||
+    profile?.chessCom?.avatarUrl;
+
+  return typeof avatarUrl === "string" ? avatarUrl.trim() : "";
+}
+
 export async function getMyPlayerProfile() {
   return apiClient("/player-profile/me", {
     method: "GET",

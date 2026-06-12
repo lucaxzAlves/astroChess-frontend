@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLanguage } from "../../../contexts/LanguageContext.jsx";
 import {
   createCyclePayload,
@@ -8,6 +8,7 @@ import {
   completePatternForgeDailySession,
   createPatternForgeCycle,
   getActivePatternForgeCycle,
+  getPatternForgeLeaderboards,
   getPatternForgeThemes,
   submitPatternForgeAttempt,
 } from "../../../services/patternForgeApi.js";
@@ -46,6 +47,7 @@ export default function PatternForgePage({
   const [calendarProgress, setCalendarProgress] = useState(null);
   const [puzzles, setPuzzles] = useState([]);
   const [themeReasons, setThemeReasons] = useState([]);
+  const [leaderboards, setLeaderboards] = useState(null);
   const [hasConfiguredPatternForge, setHasConfiguredPatternForge] = useState(false);
   const [isConfiguring, setIsConfiguring] = useState(false);
   const [forgeConfig, setForgeConfig] = useState(defaultForgeConfig);
@@ -57,8 +59,23 @@ export default function PatternForgePage({
   const [availableThemes, setAvailableThemes] = useState([]);
   const [themesLoading, setThemesLoading] = useState(false);
   const [themesError, setThemesError] = useState("");
+  const [leaderboardsLoading, setLeaderboardsLoading] = useState(false);
 
   const username = connectedUsername.trim();
+
+  const refreshLeaderboards = useCallback(async () => {
+    setLeaderboardsLoading(true);
+    try {
+      const payload = await getPatternForgeLeaderboards(50);
+      setLeaderboards(payload?.data || null);
+      return payload?.data || null;
+    } catch {
+      setLeaderboards(null);
+      return null;
+    } finally {
+      setLeaderboardsLoading(false);
+    }
+  }, []);
 
   const applyCycleResponse = (payload) => {
     const cycle = payload?.cycle || null;
@@ -82,6 +99,7 @@ export default function PatternForgePage({
         setCalendarProgress(null);
         setPuzzles([]);
         setThemeReasons([]);
+        setLeaderboards(null);
         setHasConfiguredPatternForge(false);
         return;
       }
@@ -92,9 +110,10 @@ export default function PatternForgePage({
       setThemesError("");
 
       try {
-        const [cyclePayload, themesPayload] = await Promise.allSettled([
+        const [cyclePayload, themesPayload, leaderboardPayload] = await Promise.allSettled([
           getActivePatternForgeCycle(username),
           getPatternForgeThemes(),
+          getPatternForgeLeaderboards(50),
         ]);
         if (cancelled) return;
 
@@ -112,6 +131,12 @@ export default function PatternForgePage({
           applyCycleResponse(cyclePayload.value);
         } else {
           throw cyclePayload.reason;
+        }
+
+        if (leaderboardPayload.status === "fulfilled") {
+          setLeaderboards(leaderboardPayload.value?.data || null);
+        } else {
+          setLeaderboards(null);
         }
       } catch (error) {
         if (cancelled) return;
@@ -140,6 +165,7 @@ export default function PatternForgePage({
     setCalendarProgress(null);
     setPuzzles([]);
     setThemeReasons([]);
+    setLeaderboards(null);
     setCurrentSetupStep(0);
     setCycleSummary(null);
   };
@@ -279,12 +305,15 @@ export default function PatternForgePage({
         calendarProgress={calendarProgress}
         puzzles={puzzles}
         themeReasons={themeReasons}
+        leaderboards={leaderboards}
         onResetSetup={resetSetup}
         onConfigureNew={reconfigure}
         onBackToPractice={onBackToPractice}
         onSubmitAttempt={handleAttempt}
         onCompleteDailySession={handleCompleteDailySession}
         onCompleteCycle={setCycleSummary}
+        onRefreshLeaderboards={refreshLeaderboards}
+        leaderboardsLoading={leaderboardsLoading}
       />
     );
   }
