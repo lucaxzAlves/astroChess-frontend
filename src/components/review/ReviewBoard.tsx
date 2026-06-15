@@ -85,21 +85,35 @@ export default function ReviewBoard({
     if (!wrapperRef.current) return;
 
     const syncBoardWidth = () => {
-      const width = wrapperRef.current?.clientWidth ?? 620;
-      const viewportLimit = Math.floor(window.innerHeight * viewportHeightRatio);
-      const max = Math.min(width, viewportLimit, maxBoardWidth);
-      const min = Math.min(280, width);
-      setBoardWidth(Math.max(min, Math.floor(max)));
+      const wrapper = wrapperRef.current;
+      if (!wrapper) return;
+
+      const wrapperRect = wrapper.getBoundingClientRect();
+      const wrapperWidth = wrapperRect.width || wrapper.clientWidth || 620;
+      const visualViewportWidth = window.visualViewport?.width ?? window.innerWidth;
+      const viewportWidthLimit = Math.max(0, visualViewportWidth - 24);
+      const viewportHeightLimit = Math.floor(window.innerHeight * viewportHeightRatio);
+      const availableWidth = Math.min(wrapperWidth, viewportWidthLimit, viewportHeightLimit, maxBoardWidth);
+      const safeWidth = Math.max(0, Math.floor(availableWidth) - 2);
+
+      if (safeWidth <= 0) {
+        setBoardWidth(Math.min(280, maxBoardWidth));
+        return;
+      }
+
+      setBoardWidth(Math.max(Math.min(280, safeWidth), safeWidth));
     };
 
     syncBoardWidth();
     const observer = new ResizeObserver(syncBoardWidth);
     observer.observe(wrapperRef.current);
     window.addEventListener("resize", syncBoardWidth);
+    window.visualViewport?.addEventListener("resize", syncBoardWidth);
 
     return () => {
       observer.disconnect();
       window.removeEventListener("resize", syncBoardWidth);
+      window.visualViewport?.removeEventListener("resize", syncBoardWidth);
     };
   }, [maxBoardWidth, viewportHeightRatio]);
 
@@ -245,7 +259,7 @@ export default function ReviewBoard({
       <div
         ref={wrapperRef}
         className="game-review-board-wrapper"
-        style={{ width: `min(${Math.round(viewportHeightRatio * 100)}vh, ${maxBoardWidth}px)` }}
+        style={{ width: `min(100%, ${Math.round(viewportHeightRatio * 100)}vh, ${maxBoardWidth}px)` }}
       >
         <div
           ref={boardFrameRef}

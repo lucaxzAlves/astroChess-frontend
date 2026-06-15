@@ -143,10 +143,12 @@
 .game-review-board-shell {
   width: 100%;
   max-width: 780px;
+  min-width: 0;
   border: 1px solid var(--review-border);
   border-radius: 20px;
   background: var(--review-card-soft);
   padding: 12px;
+  overflow: hidden;
 }
 
 .game-review-board-with-eval {
@@ -161,6 +163,7 @@
 .game-review-board-wrapper {
   width: min(68vh, 680px);
   max-width: 100%;
+  min-width: 0;
   aspect-ratio: 1 / 1;
   margin: 0 auto;
 }
@@ -169,6 +172,7 @@
   position: relative;
   margin: 0 auto;
   max-width: 100%;
+  min-width: 0;
 }
 
 .game-review-selected-square-pulse {
@@ -2186,6 +2190,7 @@
   }
 
   .game-review-mobile-page .game-review-board-shell {
+    width: 100%;
     max-width: none !important;
     padding: 6px;
     border-radius: 18px;
@@ -2196,6 +2201,7 @@
   .game-review-mobile-page .game-review-board-wrapper {
     width: 100% !important;
     max-width: 100%;
+    overflow: hidden;
   }
 
   .game-review-mobile-status-row {
