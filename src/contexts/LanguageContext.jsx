@@ -723,6 +723,8 @@ const dictionaries = {
     "patternForge.roundNumber": "Rodada {round}",
     "patternForge.days": "{count} dias",
     "patternForge.dailyTarget": "{count} puzzles/dia",
+    "patternForge.dailyTargetTooltip":
+      "A meta de hoje pode aumentar quando dias anteriores ficam sem treino. Ela é calculada pelos puzzles restantes e pelos dias restantes nesta rodada.",
     "patternForge.dailyTargets": "Alvos diários calculados",
     "patternForge.dailyTargetLine": "{days} dias · {count} por dia",
     "patternForge.scheduleLine": "{days} dias · {count} por dia",
@@ -1769,6 +1771,8 @@ const dictionaries = {
     "patternForge.roundNumber": "Round {round}",
     "patternForge.days": "{count} days",
     "patternForge.dailyTarget": "{count} puzzles/day",
+    "patternForge.dailyTargetTooltip":
+      "Today's target can increase when previous days were missed. It is calculated from the puzzles remaining and the days left in this round.",
     "patternForge.dailyTargets": "Calculated daily targets",
     "patternForge.dailyTargetLine": "{days} days · {count}/day",
     "patternForge.scheduleLine": "{days} days · {count} puzzles/day",

@@ -548,6 +548,11 @@ export default function PatternForgeTrainingBoard({
   const originalDailyTarget = calendarProgress?.originalDailyTarget || currentRound.dailyTarget;
   const daysRemaining = calendarProgress?.daysRemaining ?? Math.max(0, (currentRound.targetDays || 1) - dayProgress + 1);
   const isBehindSchedule = Boolean(calendarProgress?.isBehindSchedule);
+  const hasAdjustedDailyTarget = Number(dailyTarget) !== Number(originalDailyTarget);
+  const dailyTargetHelpText = t(
+    "patternForge.dailyTargetTooltip",
+    "Today's target can increase when previous days were missed. It is calculated from the puzzles remaining and the days left in this round."
+  );
   const sessionTargetPuzzles = todaySession?.targetPuzzles || dailyTarget;
   const total = Math.max(1, puzzles.length || sessionTargetPuzzles - completedTodayBase);
   const patternSetSize = cycleDraft?.patternSet?.puzzleCount || 100;
@@ -1105,9 +1110,17 @@ export default function PatternForgeTrainingBoard({
             <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-3">
               <p className="break-words text-[10px] uppercase tracking-[0.08em] text-slate-500">{t("patternForge.todaysTarget")}</p>
               <p className="mt-1 text-xl font-semibold text-white">{dailyTarget}</p>
-              {dailyTarget !== originalDailyTarget ? (
-                <p className="mt-1 text-[11px] text-amber-100/80">
-                  {t("patternForge.originalTarget", "Original")}: {originalDailyTarget}
+              {hasAdjustedDailyTarget ? (
+                <p className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-amber-100/80">
+                  <span>{t("patternForge.originalTarget", "Original")}: {originalDailyTarget}</span>
+                  <span className="group relative inline-flex">
+                    <span className="flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-cyan-200/30 bg-cyan-300/10 text-[10px] font-bold text-cyan-100">
+                      ?
+                    </span>
+                    <span className="pointer-events-none absolute left-1/2 top-6 z-30 w-56 -translate-x-1/2 rounded-xl border border-cyan-200/20 bg-slate-950 px-3 py-2 text-[11px] leading-5 text-slate-200 opacity-0 shadow-2xl shadow-black/35 transition group-hover:opacity-100 group-focus-within:opacity-100">
+                      {dailyTargetHelpText}
+                    </span>
+                  </span>
                 </p>
               ) : null}
             </div>
@@ -1388,18 +1401,31 @@ export default function PatternForgeTrainingBoard({
           ["patternForge.dayProgress", `${dayProgress} / ${currentRound.targetDays}`],
           [
             "patternForge.todaysTarget",
-            dailyTarget !== originalDailyTarget
+            hasAdjustedDailyTarget
               ? `${dailyTarget} (${t("patternForge.originalTarget", "Original")}: ${originalDailyTarget})`
               : dailyTarget,
+            hasAdjustedDailyTarget ? dailyTargetHelpText : "",
           ],
           ["patternForge.daysRemaining", daysRemaining],
           ["patternForge.completedToday", todayCompleted],
           ["patternForge.forgeProgress", `${cycleProgress}%`],
           ["patternForge.currentPhase", phase.label],
-        ].map(([key, value]) => (
+        ].map(([key, value, helpText]) => (
           <div key={key} className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
             <p className="break-words text-xs uppercase tracking-[0.08em] text-slate-500">{t(key)}</p>
-            <p className="mt-1 break-words text-xl font-semibold leading-tight text-white">{value}</p>
+            <p className="mt-1 flex flex-wrap items-center gap-1.5 break-words text-xl font-semibold leading-tight text-white">
+              <span>{value}</span>
+              {helpText ? (
+                <span className="group relative inline-flex">
+                  <span className="flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-cyan-200/30 bg-cyan-300/10 text-[10px] font-bold text-cyan-100">
+                    ?
+                  </span>
+                  <span className="pointer-events-none absolute left-1/2 top-6 z-30 w-56 -translate-x-1/2 rounded-xl border border-cyan-200/20 bg-slate-950 px-3 py-2 text-left text-[11px] font-medium leading-5 text-slate-200 opacity-0 shadow-2xl shadow-black/35 transition group-hover:opacity-100 group-focus-within:opacity-100">
+                    {helpText}
+                  </span>
+                </span>
+              ) : null}
+            </p>
           </div>
         ))}
       </section>
@@ -1627,6 +1653,7 @@ export default function PatternForgeTrainingBoard({
           currentRound={currentRound}
           totalRounds={totalRounds}
           todaysTarget={dailyTarget}
+          originalDailyTarget={originalDailyTarget}
           completedToday={todayCompleted}
           remainingToday={remainingToday}
           roundProgress={roundProgress}

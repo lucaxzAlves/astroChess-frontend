@@ -11,6 +11,7 @@ export default function ForgeRightPanel({
   currentRound,
   totalRounds,
   todaysTarget,
+  originalDailyTarget,
   completedToday,
   remainingToday,
   roundProgress,
@@ -33,7 +34,17 @@ export default function ForgeRightPanel({
   onReviewLine,
 }) {
   const { language, t } = useLanguage();
-  const progress = total ? (currentNumber / total) * 100 : 0;
+  const dailyProgress = Math.min(completedToday, todaysTarget || completedToday || 0);
+  const progress = todaysTarget ? Math.min(100, (completedToday / todaysTarget) * 100) : 0;
+  const hasAdjustedTarget = Number(originalDailyTarget) > 0 && Number(todaysTarget) !== Number(originalDailyTarget);
+  const dailyProgressLabel =
+    completedToday > todaysTarget
+      ? `${completedToday} ${t("patternForge.completedToday").toLowerCase()}`
+      : `${dailyProgress} / ${todaysTarget || 0}`;
+  const targetHelpText = t(
+    "patternForge.dailyTargetTooltip",
+    "Today's target can increase when previous days were missed. It is calculated from the puzzles remaining and the days left in this round."
+  );
   const minutes = Math.floor(elapsedSeconds / 60);
   const seconds = String(elapsedSeconds % 60).padStart(2, "0");
   const tags = localizeForgeItem(puzzle, "tags", language) || puzzle.tags;
@@ -50,8 +61,21 @@ export default function ForgeRightPanel({
             {t("patternForge.cycleStatus")}
           </p>
           <h2 className="mt-2 break-words text-xl font-semibold leading-tight text-white">
-            {t("patternForge.puzzleProgress", undefined, { current: currentNumber, total })}
+            {dailyProgressLabel}
           </h2>
+          <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium text-slate-400">
+            <span>{t("patternForge.todaysTarget")}: {todaysTarget}</span>
+            {hasAdjustedTarget ? (
+              <span className="group relative inline-flex">
+                <span className="flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-cyan-200/30 bg-cyan-300/10 text-[10px] font-bold text-cyan-100">
+                  ?
+                </span>
+                <span className="pointer-events-none absolute left-1/2 top-6 z-30 w-56 -translate-x-1/2 rounded-xl border border-cyan-200/20 bg-slate-950 px-3 py-2 text-[11px] leading-5 text-slate-200 opacity-0 shadow-2xl shadow-black/35 transition group-hover:opacity-100 group-focus-within:opacity-100">
+                  {targetHelpText}
+                </span>
+              </span>
+            ) : null}
+          </p>
         </div>
         <span className="max-w-full break-words rounded-full border border-purple-300/25 bg-purple-300/10 px-3 py-1 text-xs font-semibold leading-5 text-purple-100">
           {phase.label}
@@ -83,7 +107,19 @@ export default function ForgeRightPanel({
         <div className="mt-3 grid gap-2">
           <div className="flex items-center justify-between text-sm text-slate-300">
             <span className="min-w-0 break-words">{t("patternForge.todaysTarget")}</span>
-            <span className="shrink-0 font-semibold text-white">{todaysTarget}</span>
+            <span className="flex shrink-0 items-center gap-1.5 font-semibold text-white">
+              {todaysTarget}
+              {hasAdjustedTarget ? (
+                <span className="group relative inline-flex">
+                  <span className="flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-cyan-200/30 bg-cyan-300/10 text-[10px] font-bold text-cyan-100">
+                    ?
+                  </span>
+                  <span className="pointer-events-none absolute right-0 top-6 z-30 w-56 rounded-xl border border-cyan-200/20 bg-slate-950 px-3 py-2 text-left text-[11px] font-medium leading-5 text-slate-200 opacity-0 shadow-2xl shadow-black/35 transition group-hover:opacity-100 group-focus-within:opacity-100">
+                    {targetHelpText}
+                  </span>
+                </span>
+              ) : null}
+            </span>
           </div>
           <div className="flex items-center justify-between text-sm text-slate-300">
             <span className="min-w-0 break-words">{t("patternForge.completedToday")}</span>
@@ -106,6 +142,9 @@ export default function ForgeRightPanel({
       <section className="mt-4 rounded-2xl border border-white/10 bg-slate-950/35 p-4">
         <p className="break-words text-xs uppercase tracking-[0.1em] text-slate-500">
           {t("patternForge.currentPuzzle")}
+        </p>
+        <p className="mt-2 text-sm font-semibold text-slate-300">
+          {t("patternForge.puzzleProgress", undefined, { current: currentNumber, total })}
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <span className="max-w-full break-words rounded-full border border-rose-300/25 bg-rose-300/10 px-3 py-1 text-xs leading-5 text-rose-100">
